@@ -44,12 +44,15 @@ python3 tools/import_irazer.py \
 
 Do not edit generated catalogs by hand. Updating a pinned commit requires a
 review of source licensing, importer output, and semantic changes. Imported facts
-remain evidence-only until a curated manifest and hardware verification establish
-RazeRS support.
+may establish experimental RazeRS support after reconciliation, a curated manifest,
+and local unit or replay tests; project-owned hardware is not a mandatory gate. See
+[`docs/evidence-policy.md`](docs/evidence-policy.md).
 
 ## Device contributions
 
-A device contribution should include:
+A hardware-backed device contribution should include the applicable items below,
+but upstream research, manifest, driver, and replay-test contributions do not require
+the contributor to own the device:
 
 - exact marketing name and connection mode;
 - USB VID/PID or Bluetooth identity;
@@ -65,8 +68,9 @@ unredacted packet captures in an issue or commit.
 ## Support states
 
 - `detected`: identity is known; no command is claimed to work.
-- `experimental`: an explicit opt-in capability is available but incompletely tested.
-- `verified`: the listed platform and firmware combination passed hardware tests.
+- `experimental`: an evidence-backed implementation is available, with visible
+  limitations and opt-in where required; a RazeRS hardware record is optional.
+- `verified`: the listed platform and firmware combination passed RazeRS hardware tests.
 - `regressed`: a previously verified capability currently fails.
 - `unsupported`: the device or capability is confirmed not to work.
 

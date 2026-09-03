@@ -317,7 +317,7 @@ fn upstream_stats(
     );
     print_comparison(&catalog, &openrgb);
     print_irazer_comparison(&irazer, &openrgb);
-    println!("support status: evidence only; hardware verification required");
+    println!("support basis: reusable upstream evidence; reconcile before enablement");
     Ok(())
 }
 
@@ -442,7 +442,7 @@ fn print_upstream_device(device: &UpstreamDevice, catalog: &UpstreamCatalog) {
         &catalog.source.commit[..12],
         device.source_symbol
     );
-    println!("support status: evidence only; hardware verification required");
+    println!("RazeRS status: upstream evidence; apply the evidence policy before enablement");
 }
 
 fn print_openrgb_device(device: &OpenRgbDevice, catalog: &OpenRgbCatalog) {
@@ -466,7 +466,7 @@ fn print_openrgb_device(device: &OpenRgbDevice, catalog: &OpenRgbCatalog) {
         device.source_symbol,
         device.pid_symbol
     );
-    println!("support status: evidence only; hardware verification required");
+    println!("RazeRS status: upstream evidence; apply the evidence policy before enablement");
 }
 
 fn print_irazer_device(device: &IrazerDevice, catalog: &IrazerCatalog) {
@@ -488,7 +488,7 @@ fn print_irazer_device(device: &IrazerDevice, catalog: &IrazerCatalog) {
         &catalog.source.commit[..12],
         device.source_symbol
     );
-    println!("RazeRS support status: evidence only; hardware verification required");
+    println!("RazeRS status: upstream evidence; apply the evidence policy before enablement");
 }
 
 fn feature_names(features: &[UpstreamFeature]) -> String {

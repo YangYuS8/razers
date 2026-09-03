@@ -3,11 +3,12 @@
 Device manifests live in `devices/*.toml`. One file describes one product, while its
 `connections` array describes the physical links that can expose that product.
 
-These curated manifests are intentionally distinct from the generated, evidence-only
-catalogs in `data/upstream`. Upstream data can seed a manifest, but it does not
-establish a safe interface match, protocol selection, or working RazeRS capability.
-When sources disagree, keep the conflict visible until device-specific evidence
-resolves it.
+These curated manifests are intentionally distinct from the generated catalogs in
+`data/upstream`. Upstream data can seed a manifest and, after review and replay
+testing, establish an experimental protocol or capability without a project-owned
+device. It must not silently enable live I/O. When sources disagree, apply the
+research process in [`evidence-policy.md`](evidence-policy.md) and keep unresolved
+fields visible and disabled.
 
 The registry parser rejects unknown fields, duplicate identifiers, invalid ranges,
 unpinned evidence, and claims of verified support without a verification record.
@@ -37,8 +38,9 @@ hyphens. Product kinds currently include `mouse`, `keyboard`, `headset`, `speake
 Support status is one of:
 
 - `detected`: identity is known, without a working-command claim;
-- `experimental`: opt-in behavior exists but is incompletely tested;
-- `verified`: listed platform/firmware records passed hardware tests;
+- `experimental`: evidence-backed behavior and replay tests exist; RazeRS hardware
+  testing is optional and limitations remain visible;
+- `verified`: listed platform/firmware records passed RazeRS hardware tests;
 - `regressed`: behavior that previously passed currently fails;
 - `unsupported`: the device or capability is confirmed not to work.
 
@@ -112,7 +114,8 @@ license = "GPL-2.0-or-later"
 ```
 
 Use a complete commit SHA and exact path/symbol. Evidence states where a fact came
-from; it does not by itself establish that RazeRS works with the device.
+from. A reviewed body of evidence can establish experimental support; one catalog
+row alone cannot.
 
 ## Verification
 

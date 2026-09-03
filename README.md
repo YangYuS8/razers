@@ -26,6 +26,8 @@ their respective owners.
 - Product, connection, logical device, and capability are distinct concepts.
 - One serialized worker per physical connection when live I/O is introduced.
 - Evidence-backed support levels with platform and firmware-specific verification.
+- Reuse upstream hardware results; investigate disagreements instead of requiring
+  maintainers to repurchase every device.
 - Safe-by-default tooling: unknown devices receive read-only probes only.
 
 ## Workspace
@@ -106,8 +108,9 @@ Protocol facts and device metadata are traced to pinned upstream sources. The
 generated OpenRazer, OpenRGB, and iRazer catalogs are evidence-only: an entry does not claim
 that RazeRS can control or has tested that device.
 See [`docs/provenance.md`](docs/provenance.md) and the `evidence` entries in each
-device manifest. Code in this repository is licensed under
-GPL-2.0-or-later; see [`LICENSE`](LICENSE).
+device manifest. The criteria for turning that evidence into experimental support
+are documented in [`docs/evidence-policy.md`](docs/evidence-policy.md). Code in this
+repository is licensed under GPL-2.0-or-later; see [`LICENSE`](LICENSE).
 
 Please read [`docs/safety.md`](docs/safety.md) before experimenting with hardware,
 and [`CONTRIBUTING.md`](CONTRIBUTING.md) before submitting device support.

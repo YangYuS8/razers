@@ -57,13 +57,18 @@ and attaching evidence and tests.
 Source-derived catalogs and curated manifests are separate layers:
 
 ```text
-Pinned upstream source -> generated evidence catalog -> curated device manifest
-                                                        -> hardware verification
+Pinned upstream source -> generated evidence catalog -> evidence reconciliation
+                                                        -> curated device manifest
+                                                        -> typed driver + replay tests
+                                                        -> experimental availability
+                                                        -> optional RazeRS verification
 ```
 
-The evidence catalog supplies known identities and implementation leads. Only a
-curated manifest may select protocol and capability drivers, and only verification
-records may claim working support.
+The evidence catalog supplies known identities and reusable implementation results.
+A reviewed, curated manifest may select protocol and capability drivers and enable
+experimental behavior without requiring the maintainer to own that device. A
+verification record makes the narrower, stronger claim that RazeRS itself passed on
+a stated platform and firmware. See [`evidence-policy.md`](evidence-policy.md).
 
 ## Concurrency model
 
