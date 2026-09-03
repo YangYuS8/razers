@@ -44,7 +44,9 @@ The architectural boundaries and roadmap are documented in
 
 ## Quick start
 
-The workspace requires Rust 1.85 or newer.
+The workspace requires Rust 1.85 or newer. Linux builds also need `pkg-config`
+and the libudev development files (`libudev-dev` on Debian/Ubuntu; provided by
+`systemd` on Arch Linux).
 
 ```bash
 cargo test --workspace

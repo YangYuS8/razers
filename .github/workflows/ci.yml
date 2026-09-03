@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Install Linux HID build dependency
+        run: sudo apt-get update && sudo apt-get install --yes libudev-dev
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
