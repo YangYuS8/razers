@@ -1,0 +1,64 @@
+name: Device support
+description: Contribute evidence or request support for a specific device
+title: "device: "
+labels: ["device-support"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not post serial numbers or unredacted packet captures. Support is verified per connection, platform, firmware, and capability.
+  - type: input
+    id: model
+    attributes:
+      label: Exact model
+      placeholder: Razer Basilisk V3
+    validations:
+      required: true
+  - type: input
+    id: identity
+    attributes:
+      label: Hardware identity
+      description: VID:PID and connection mode; remove serial numbers.
+      placeholder: 1532:0099, wired USB
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      placeholder: Arch Linux x86_64, kernel 6.x
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware
+      description: Enter unknown when it cannot be read safely.
+    validations:
+      required: true
+  - type: textarea
+    id: interfaces
+    attributes:
+      label: Interface information
+      description: HID usage page, usage, interface number, and report lengths when known.
+    validations:
+      required: true
+  - type: textarea
+    id: capabilities
+    attributes:
+      label: Capability results
+      description: List working, failed, and untested capabilities separately.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Link a pinned upstream commit, redacted diagnostic bundle, or golden trace.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Privacy and safety
+      options:
+        - label: I removed serial numbers, personal paths, tokens, and unrelated HID traffic.
+          required: true

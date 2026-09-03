@@ -1,0 +1,18 @@
+[package]
+name = "razers-cli"
+description = "Developer command-line tools for Razers"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "razersctl"
+path = "src/main.rs"
+
+[dependencies]
+razers-device-registry.workspace = true
+razers-protocol-core.workspace = true
+razers-types.workspace = true

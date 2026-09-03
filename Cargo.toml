@@ -1,0 +1,26 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/razers-cli",
+    "crates/razers-device-registry",
+    "crates/razers-protocol-core",
+    "crates/razers-transport",
+    "crates/razers-types",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "GPL-2.0-or-later"
+repository = "https://github.com/YangYuS8/razers"
+authors = ["YangYuS8 and Razers contributors"]
+
+[workspace.dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+thiserror = "2.0.20"
+toml = "1.1.5"
+razers-device-registry = { path = "crates/razers-device-registry" }
+razers-protocol-core = { path = "crates/razers-protocol-core" }
+razers-transport = { path = "crates/razers-transport" }
+razers-types = { path = "crates/razers-types" }

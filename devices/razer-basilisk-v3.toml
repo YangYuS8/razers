@@ -1,0 +1,91 @@
+schema_version = 1
+id = "razer.basilisk-v3"
+display_name = "Razer Basilisk V3"
+kind = "mouse"
+
+[support]
+status = "detected"
+notes = "Identity and capabilities are imported from pinned OpenRazer metadata; Razers has not performed hardware writes or cross-platform verification."
+
+[[connections]]
+id = "wired"
+role = "control"
+transport = "usb-hid-feature"
+
+[connections.match]
+vid = 0x1532
+pid = 0x0099
+
+[connections.protocol]
+family = "razer-report-90"
+report_id = 0
+transaction_id = 0x1f
+response_delay_us = 600
+busy_retries = 5
+
+[connections.protocol.quirks]
+include_report_id_in_payload = false
+validate_response_crc = true
+validate_command_echo = true
+
+[capabilities.dpi]
+status = "detected"
+driver = "dpi-u16-xy"
+minimum = 100
+maximum = 26000
+step = 50
+axes = "xy"
+persistence = ["host-profile"]
+
+[capabilities.polling_rate]
+status = "detected"
+driver = "polling-standard"
+persistence = ["host-profile"]
+
+[capabilities.lighting]
+status = "detected"
+driver = "extended-matrix"
+rows = 1
+columns = 11
+effects = ["static", "spectrum", "wave", "custom"]
+persistence = ["host-profile"]
+
+[[capabilities.lighting.zones]]
+id = "logo"
+protocol_led_id = 0x04
+
+[[capabilities.lighting.zones]]
+id = "scroll"
+protocol_led_id = 0x01
+
+[[evidence]]
+source = "OpenRazer"
+repository = "openrazer/openrazer"
+commit = "6820f9da169d354bc7e6e93a0aa8683a6bb75792"
+path = "daemon/openrazer_daemon/hardware/mouse.py"
+symbol = "RazerBasiliskV3"
+license = "GPL-2.0-or-later"
+
+[[evidence]]
+source = "OpenRazer"
+repository = "openrazer/openrazer"
+commit = "6820f9da169d354bc7e6e93a0aa8683a6bb75792"
+path = "driver/razermouse_driver.h"
+symbol = "USB_DEVICE_ID_RAZER_BASILISK_V3"
+license = "GPL-2.0-or-later"
+
+[[evidence]]
+source = "OpenRazer"
+repository = "openrazer/openrazer"
+commit = "6820f9da169d354bc7e6e93a0aa8683a6bb75792"
+path = "driver/razermouse_driver.c"
+symbol = "razer_get_report"
+license = "GPL-2.0-or-later"
+
+[[evidence]]
+source = "OpenRazer"
+repository = "openrazer/openrazer"
+commit = "6820f9da169d354bc7e6e93a0aa8683a6bb75792"
+path = "driver/razermouse_driver.h"
+symbol = "RAZER_MOUSE_WAIT_US"
+license = "GPL-2.0-or-later"

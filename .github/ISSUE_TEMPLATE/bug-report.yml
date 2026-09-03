@@ -1,0 +1,50 @@
+name: Bug report
+description: Report a reproducible problem in Razers
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Security-sensitive issues belong in a private vulnerability report, not a public issue.
+  - type: input
+    id: version
+    attributes:
+      label: Razers version or commit
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system and architecture
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Redacted diagnostics
+      render: text
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Privacy
+      options:
+        - label: I removed serial numbers, personal paths, tokens, and unrelated HID traffic.
+          required: true

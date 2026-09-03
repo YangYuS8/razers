@@ -1,0 +1,15 @@
+[package]
+name = "razers-device-registry"
+description = "Versioned device manifests and validation for Razers"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+razers-types.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+toml.workspace = true
