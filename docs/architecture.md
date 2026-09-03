@@ -66,12 +66,13 @@ writes and firmware operations must never be silently coalesced.
 
 ## Workspace evolution
 
-Milestone 0 intentionally contains only foundational crates:
+The completed Milestone 0 foundation and the first read-only Milestone 1 slice contain:
 
 ```text
 razers-types
 razers-protocol-core
 razers-transport
+razers-transport-hidapi
 razers-device-registry
 razers-cli
 ```

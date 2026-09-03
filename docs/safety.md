@@ -50,5 +50,7 @@ collect or transmit device data by default.
 
 ## Current milestone guarantee
 
-Milestone 0 contains no production transport backend and cannot open or write to real
-hardware. `ReplayTransport` is the only implementation supplied by the workspace.
+The current code can enumerate HID descriptors but does not open devices or write to
+real hardware. Device paths and serial-number values are omitted from enumeration
+results. `ReplayTransport` remains the only report I/O implementation supplied by the
+workspace.

@@ -15,4 +15,5 @@ path = "src/main.rs"
 [dependencies]
 razers-device-registry.workspace = true
 razers-protocol-core.workspace = true
+razers-transport-hidapi.workspace = true
 razers-types.workspace = true

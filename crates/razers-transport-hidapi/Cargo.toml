@@ -1,0 +1,13 @@
+[package]
+name = "razers-transport-hidapi"
+description = "Cross-platform HID enumeration and transport support for Razers"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+hidapi.workspace = true
+thiserror.workspace = true

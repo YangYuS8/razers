@@ -11,7 +11,8 @@ and verified without building a device-specific UI for every product.
 > [!WARNING]
 > Razers is pre-alpha software. It does not send commands to real hardware yet.
 > The current release contains protocol codecs, replayable transport tests, a
-> versioned device registry, and developer CLI tools.
+> versioned device registry, privacy-preserving HID enumeration, and developer
+> CLI tools.
 
 Razers is an independent community project. It is not affiliated with, endorsed
 by, or sponsored by Razer Inc. Razer and related product names are trademarks of
@@ -34,6 +35,7 @@ their respective owners.
 | `razers-types` | Shared identifiers, support states, and command risk levels |
 | `razers-protocol-core` | Safe 90-byte report encoding, decoding, and CRC validation |
 | `razers-transport` | OS-independent report I/O trait and deterministic replay transport |
+| `razers-transport-hidapi` | Cross-platform, descriptor-only HID enumeration |
 | `razers-device-registry` | TOML device schema, loading, and validation |
 | `razers-cli` | Registry and packet inspection developer commands |
 
@@ -48,6 +50,7 @@ The workspace requires Rust 1.85 or newer.
 cargo test --workspace
 cargo run -p razers-cli -- registry validate devices
 cargo run -p razers-cli -- registry list devices
+cargo run -p razers-cli -- devices devices
 ```
 
 Inspect a registry entry:
@@ -65,9 +68,9 @@ cargo run -p razers-cli -- report decode "$packet_hex"
 
 Run `cargo run -p razers-cli -- help` for the complete command list.
 
-## Current milestone
+## Current status
 
-Milestone 0 establishes the project foundation:
+Milestone 0 is complete, and descriptor-only enumeration begins Milestone 1:
 
 - [x] Rust workspace and architectural boundaries
 - [x] Explicit 90-byte report codec and checksum tests
@@ -75,7 +78,7 @@ Milestone 0 establishes the project foundation:
 - [x] Device registry schema v1 and validation
 - [x] Developer CLI for registry and packet inspection
 - [x] CI, safety policy, contribution guide, and source provenance
-- [ ] Cross-platform HID enumeration
+- [x] Cross-platform HID enumeration without opening devices
 - [ ] Safe, read-only identification of the first physical device
 - [ ] Agent and versioned local IPC
 - [ ] Capability-driven desktop UI

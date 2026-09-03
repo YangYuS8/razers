@@ -4,6 +4,7 @@ use std::{env, path::Path};
 
 use razers_device_registry::{DeviceKind, Registry};
 use razers_protocol_core::Report90;
+use razers_transport_hidapi::{HidInterfaceSummary, enumerate_razer};
 use razers_types::{DeviceId, SupportStatus};
 
 const HELP: &str = r#"razersctl - hardware-free Razers developer tools
@@ -12,6 +13,7 @@ USAGE:
   razersctl registry validate [DIRECTORY]
   razersctl registry list [DIRECTORY]
   razersctl registry show <DEVICE_ID> [DIRECTORY]
+  razersctl devices [DIRECTORY]
   razersctl report encode <COMMAND_CLASS> <COMMAND_ID> [ARGUMENT_HEX]
   razersctl report decode <REPORT_HEX>
   razersctl help
@@ -59,6 +61,8 @@ fn run(args: Vec<String>) -> Result<(), String> {
         [group, command, id, directory] if group == "registry" && command == "show" => {
             registry_show(id, Path::new(directory))
         }
+        [command] if command == "devices" => devices(Path::new("devices")),
+        [command, directory] if command == "devices" => devices(Path::new(directory)),
         [group, command, class, id] if group == "report" && command == "encode" => {
             report_encode(class, id, "")
         }
@@ -152,6 +156,59 @@ fn registry_show(id: &str, directory: &Path) -> Result<(), String> {
         );
     }
     Ok(())
+}
+
+fn devices(directory: &Path) -> Result<(), String> {
+    let registry = load_registry(directory)?;
+    let interfaces = enumerate_razer().map_err(|error| error.to_string())?;
+    if interfaces.is_empty() {
+        println!("no Razer HID interfaces detected");
+        return Ok(());
+    }
+
+    for interface in interfaces {
+        print_interface(&registry, &interface);
+    }
+    Ok(())
+}
+
+fn print_interface(registry: &Registry, interface: &HidInterfaceSummary) {
+    let matches = registry
+        .iter()
+        .filter(|loaded| {
+            loaded.descriptor.connections.iter().any(|connection| {
+                connection.identity.matches_hid(
+                    interface.vendor_id,
+                    interface.product_id,
+                    interface.usage_page,
+                    interface.usage,
+                    interface.interface_number,
+                )
+            })
+        })
+        .map(|loaded| loaded.descriptor.id.as_str())
+        .collect::<Vec<_>>();
+    let registry_match = if matches.is_empty() {
+        "unknown".to_owned()
+    } else {
+        matches.join(",")
+    };
+
+    println!(
+        "{:04x}:{:04x}\tinterface={}\tusage={:04x}:{:04x}\tproduct={}\tserial={}\tregistry={}",
+        interface.vendor_id,
+        interface.product_id,
+        interface.interface_number,
+        interface.usage_page,
+        interface.usage,
+        interface.product.as_deref().unwrap_or("unknown"),
+        if interface.serial_number_present {
+            "present-redacted"
+        } else {
+            "absent"
+        },
+        registry_match
+    );
 }
 
 fn report_encode(class: &str, id: &str, arguments: &str) -> Result<(), String> {

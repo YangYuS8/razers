@@ -5,6 +5,7 @@ members = [
     "crates/razers-device-registry",
     "crates/razers-protocol-core",
     "crates/razers-transport",
+    "crates/razers-transport-hidapi",
     "crates/razers-types",
 ]
 
@@ -20,7 +21,9 @@ authors = ["YangYuS8 and Razers contributors"]
 serde = { version = "1.0.229", features = ["derive"] }
 thiserror = "2.0.20"
 toml = "1.1.5"
+hidapi = "2.6.7"
 razers-device-registry = { path = "crates/razers-device-registry" }
 razers-protocol-core = { path = "crates/razers-protocol-core" }
 razers-transport = { path = "crates/razers-transport" }
+razers-transport-hidapi = { path = "crates/razers-transport-hidapi" }
 razers-types = { path = "crates/razers-types" }

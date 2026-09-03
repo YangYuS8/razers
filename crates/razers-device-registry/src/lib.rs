@@ -80,6 +80,28 @@ pub struct MatchDescriptor {
     pub interface_number: Option<u8>,
 }
 
+impl MatchDescriptor {
+    /// Return whether a privacy-preserving HID descriptor matches this connection.
+    pub fn matches_hid(
+        &self,
+        vendor_id: u16,
+        product_id: u16,
+        usage_page: u16,
+        usage: u16,
+        interface_number: i32,
+    ) -> bool {
+        self.vid == vendor_id
+            && self.pid == product_id
+            && self
+                .usage_page
+                .is_none_or(|expected| expected == usage_page)
+            && self.usage.is_none_or(|expected| expected == usage)
+            && self
+                .interface_number
+                .is_none_or(|expected| i32::from(expected) == interface_number)
+    }
+}
+
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ProtocolDescriptor {
@@ -569,5 +591,21 @@ license = "GPL-2.0-or-later"
                 .any(|problem| problem.contains("schema_version"))
         );
         assert!(problems.iter().any(|problem| problem.contains("minimum")));
+    }
+
+    #[test]
+    fn matches_only_the_declared_hid_interface_constraints() {
+        let identity = MatchDescriptor {
+            vid: 0x1532,
+            pid: 0x0099,
+            usage_page: Some(0xff00),
+            usage: None,
+            interface_number: Some(2),
+        };
+
+        assert!(identity.matches_hid(0x1532, 0x0099, 0xff00, 1, 2));
+        assert!(!identity.matches_hid(0x1532, 0x0099, 0x0001, 1, 2));
+        assert!(!identity.matches_hid(0x1532, 0x0099, 0xff00, 1, 1));
+        assert!(!identity.matches_hid(0x1234, 0x0099, 0xff00, 1, 2));
     }
 }
