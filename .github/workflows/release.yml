@@ -72,14 +72,16 @@ jobs:
           RELEASE_SHA: ${{ steps.release-branch.outputs.sha }}
         run: |
           for attempt in {1..10}; do
-            run_ids=$(gh api \
-              "repos/${GITHUB_REPOSITORY}/actions/runs?event=pull_request&head_sha=${RELEASE_SHA}&status=action_required&per_page=100" \
-              --jq '.workflow_runs[].id')
-            if [[ -n "$run_ids" ]]; then
-              while read -r run_id; do
-                gh api --method POST \
-                  "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/approve"
-              done <<<"$run_ids"
+            runs=$(gh api \
+              "repos/${GITHUB_REPOSITORY}/actions/runs?event=pull_request&head_sha=${RELEASE_SHA}&per_page=100" \
+              --jq '.workflow_runs[] | [.id, .conclusion] | @tsv')
+            if [[ -n "$runs" ]]; then
+              while IFS=$'\t' read -r run_id conclusion; do
+                if [[ "$conclusion" == "action_required" ]]; then
+                  gh api --method POST \
+                    "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/approve"
+                fi
+              done <<<"$runs"
               exit 0
             fi
             sleep 2
