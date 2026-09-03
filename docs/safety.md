@@ -10,8 +10,8 @@ Every semantic command must eventually declare one of these classes:
 
 | Risk | Meaning | Default release behavior |
 | --- | --- | --- |
-| `read-only` | Descriptor or state query | Allowed for matched devices |
-| `reversible` | Volatile DPI, lighting, or similar state | Allowed only for supported capabilities |
+| `read-only` | Descriptor or state query | Allowed for narrowly matched, evidence-backed devices |
+| `reversible` | Volatile DPI, lighting, or similar state | Experimental opt-in from reconciled evidence; verified capabilities may be default |
 | `persistent` | Device or onboard storage write | Explicit confirmation and verification required |
 | `experimental-write` | Incompletely understood vendor command | Developer build and allowlist only |
 | `firmware` | Bootloader or firmware operation | Not part of the normal Agent or IPC |
@@ -19,6 +19,12 @@ Every semantic command must eventually declare one of these classes:
 Unknown devices enter safe probing. Safe probing may enumerate descriptors and run
 reviewed information queries, but it must not send persistent writes, brute-force
 commands, fuzz packet fields, or perform firmware operations.
+
+Upstream hardware results may justify typed read-only and reversible experimental
+operations when their provenance is pinned and local replay tests cover the packet
+and failure behavior. Project-owned hardware testing is not required for every
+device; it remains required before making stronger RazeRS-specific verification
+claims.
 
 ## Raw packet tooling
 

@@ -66,14 +66,17 @@ only to corroborate the existence of the alternative behavior.
 
 ## Evidence versus verification
 
-An upstream implementation is evidence that a protocol fact or device identity is
-plausible. It is not a RazeRS hardware verification. Device manifests remain marked
-`detected` or `experimental` until a named capability passes the project's own tests
-on a recorded operating-system and firmware combination.
+An upstream implementation is reusable engineering evidence, including evidence of
+real-world hardware behavior. It is not labeled as a RazeRS hardware verification,
+but a separate project-owned device test is not required before implementing or
+shipping an `experimental` capability.
 
-The generated catalog therefore stays separate from curated `devices/*.toml`
-manifests. It can name an attached device and guide implementation, but it cannot
-select a protocol driver or authorize hardware writes.
+The generated catalog stays separate from curated `devices/*.toml` manifests so
+that imports cannot silently enable hardware operations. A reviewed manifest may
+select a typed driver after source reconciliation and replay testing. RazeRS
+verification records add platform and firmware-specific confidence rather than
+acting as a prerequisite for all useful support. The acceptance and disagreement
+rules are defined in [`evidence-policy.md`](evidence-policy.md).
 
 ## OpenRGB lighting catalog
 
@@ -94,8 +97,9 @@ Those files are GPL-2.0-or-later.
 
 The two catalogs overlap on 172 USB identities. They currently contain 72 naming
 differences and 18 matrix-dimension differences. RazeRS reports these disagreements
-instead of choosing one source automatically; a curated manifest must resolve them
-with device-specific evidence.
+instead of choosing one source automatically. Resolution examines semantics,
+revisions, source history, issues, tests, and additional implementations; purchasing
+the device is not the default resolution mechanism.
 
 ## iRazer cross-platform catalog
 
@@ -114,5 +118,6 @@ MIT-licensed.
 
 iRazer and OpenRGB overlap on 189 identities with no matrix-family or transaction-ID
 disagreements at these pinned commits. iRazer additionally records the Nommo V2 Pro,
-Nommo V2, and Nommo V2 X. An iRazer `supported` label is displayed explicitly as an
-upstream claim and remains evidence-only in RazeRS until independently verified.
+Nommo V2, and Nommo V2 X. An iRazer `supported` label remains attributed to iRazer,
+but it is a meaningful input to RazeRS experimental-support decisions rather than a
+claim that must be discarded until repeated locally.
