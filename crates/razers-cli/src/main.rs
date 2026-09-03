@@ -575,12 +575,13 @@ fn print_interface(
         .unwrap_or("unknown");
 
     println!(
-        "{:04x}:{:04x}\tinterface={}\tusage={:04x}:{:04x}\tproduct={}\tserial={}\tregistry={}\topenrazer={}\topenrgb={}\tirazer={}",
+        "{:04x}:{:04x}\tinterface={}\tusage={:04x}:{:04x}\tcollection={}\taccess=descriptor-only\tproduct={}\tserial={}\tregistry={}\topenrazer={}\topenrgb={}\tirazer={}",
         interface.vendor_id,
         interface.product_id,
         interface.interface_number,
         interface.usage_page,
         interface.usage,
+        interface.collection_kind().as_str(),
         interface.product.as_deref().unwrap_or("unknown"),
         if interface.serial_number_present {
             "present-redacted"

@@ -27,6 +27,52 @@ pub struct HidInterfaceSummary {
     pub serial_number_present: bool,
 }
 
+impl HidInterfaceSummary {
+    /// Classify the HID collection using descriptor data only.
+    pub const fn collection_kind(&self) -> HidCollectionKind {
+        HidCollectionKind::from_usage(self.usage_page, self.usage)
+    }
+
+    /// Whether this descriptor is a possible vendor-command collection.
+    ///
+    /// This is only a discovery hint. It does not authorize opening the
+    /// interface or sending a report; a curated manifest must still match it.
+    pub const fn is_vendor_defined_collection(&self) -> bool {
+        matches!(self.collection_kind(), HidCollectionKind::VendorDefined)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum HidCollectionKind {
+    ConsumerControl,
+    Keyboard,
+    Mouse,
+    Other,
+    VendorDefined,
+}
+
+impl HidCollectionKind {
+    pub const fn from_usage(usage_page: u16, usage: u16) -> Self {
+        match (usage_page, usage) {
+            (0xff00..=0xffff, _) => Self::VendorDefined,
+            (0x0001, 0x0002) => Self::Mouse,
+            (0x0001, 0x0006) => Self::Keyboard,
+            (0x000c, _) => Self::ConsumerControl,
+            _ => Self::Other,
+        }
+    }
+
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::ConsumerControl => "consumer-control",
+            Self::Keyboard => "keyboard",
+            Self::Mouse => "mouse",
+            Self::Other => "other",
+            Self::VendorDefined => "vendor-defined",
+        }
+    }
+}
+
 /// Enumerate Razer HID interfaces without opening them.
 pub fn enumerate_razer() -> Result<Vec<HidInterfaceSummary>, HidEnumerationError> {
     enumerate_vendor(RAZER_VENDOR_ID)
@@ -58,4 +104,35 @@ pub fn enumerate_vendor(vendor_id: u16) -> Result<Vec<HidInterfaceSummary>, HidE
 pub enum HidEnumerationError {
     #[error("unable to initialize the HID subsystem: {0}")]
     Initialize(hidapi::HidError),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn distinguishes_input_and_vendor_defined_collections() {
+        assert_eq!(
+            HidCollectionKind::from_usage(0x0001, 0x0002),
+            HidCollectionKind::Mouse
+        );
+        assert_eq!(
+            HidCollectionKind::from_usage(0x0001, 0x0006),
+            HidCollectionKind::Keyboard
+        );
+        assert_eq!(
+            HidCollectionKind::from_usage(0xff01, 0x0001),
+            HidCollectionKind::VendorDefined
+        );
+    }
+
+    #[test]
+    fn never_treats_standard_input_as_a_vendor_collection() {
+        for (usage_page, usage) in [(0x0001, 0x0002), (0x0001, 0x0006), (0x000c, 0x0001)] {
+            assert_ne!(
+                HidCollectionKind::from_usage(usage_page, usage),
+                HidCollectionKind::VendorDefined
+            );
+        }
+    }
 }
