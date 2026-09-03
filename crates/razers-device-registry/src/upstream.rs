@@ -528,13 +528,13 @@ impl UpstreamCatalog {
                     device.name
                 ));
             }
-            if let Some([rows, columns]) = device.matrix
-                && (rows == 0 || columns == 0)
-            {
-                problems.push(format!(
-                    "device '{}': matrix dimensions must be non-zero",
-                    device.name
-                ));
+            if let Some([rows, columns]) = device.matrix {
+                if rows == 0 || columns == 0 {
+                    problems.push(format!(
+                        "device '{}': matrix dimensions must be non-zero",
+                        device.name
+                    ));
+                }
             }
             if device.max_dpi == Some(0) {
                 problems.push(format!(

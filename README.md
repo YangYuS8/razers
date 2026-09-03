@@ -10,9 +10,10 @@ and verified without building a device-specific UI for every product.
 
 > [!WARNING]
 > RazeRS is pre-alpha software. It does not send commands to real hardware yet.
-> The current release contains protocol codecs, replayable transport tests, a
+> The current source tree contains protocol codecs, replayable transport tests, a
 > versioned device registry, pinned OpenRazer, OpenRGB, and iRazer evidence catalogs,
-> privacy-preserving HID enumeration, and developer CLI tools.
+> privacy-preserving HID enumeration, an initial read-only desktop application, and
+> developer CLI tools.
 
 RazeRS is an independent community project. It is not affiliated with, endorsed
 by, or sponsored by Razer Inc. Razer and related product names are trademarks of
@@ -29,12 +30,14 @@ their respective owners.
 - Reuse upstream hardware results; investigate disagreements instead of requiring
   maintainers to repurchase every device.
 - Safe-by-default tooling: unknown devices receive read-only probes only.
+- A user-first application with no ads, required account, or default telemetry.
 
 ## Workspace
 
 | Crate | Responsibility |
 | --- | --- |
 | `razers-types` | Shared identifiers, support states, and command risk levels |
+| `razers-app` | Cross-platform, user-facing desktop application |
 | `razers-protocol-core` | Safe 90-byte report encoding, decoding, and CRC validation |
 | `razers-protocol-razer90` | Timed request-response exchange, validation, and explicit busy policy |
 | `razers-transport` | OS-independent report I/O trait and deterministic replay transport |
@@ -55,6 +58,7 @@ and the libudev development files (`libudev-dev` on Debian/Ubuntu; provided by
 
 ```bash
 cargo test --workspace
+cargo run -p razers-app
 cargo run -p razers-cli -- registry validate devices
 cargo run -p razers-cli -- upstream validate
 cargo run -p razers-cli -- upstream stats
@@ -106,6 +110,7 @@ Milestone 0 is complete, and descriptor-only enumeration begins Milestone 1:
 - [x] Reproducible import of 267 OpenRazer, 196 OpenRGB, and 192 iRazer records
 - [x] Cross-source comparison without silently resolving conflicting facts
 - [x] Field-level evidence assessment, candidate shortlist, and conflict queue
+- [x] Read-only desktop device overview with explicit privacy and support states
 - [ ] Safe, read-only identification of the first physical device
 - [ ] Agent and versioned local IPC
 - [ ] Capability-driven desktop UI
@@ -119,6 +124,10 @@ See [`docs/provenance.md`](docs/provenance.md) and the `evidence` entries in eac
 device manifest. The criteria for turning that evidence into experimental support
 are documented in [`docs/evidence-policy.md`](docs/evidence-policy.md). Code in this
 repository is licensed under GPL-2.0-or-later; see [`LICENSE`](LICENSE).
+
+The application experience is governed by
+[`docs/product-principles.md`](docs/product-principles.md), including the permanent
+no-advertising, no-required-account, and privacy-by-default commitments.
 
 Please read [`docs/safety.md`](docs/safety.md) before experimenting with hardware,
 and [`CONTRIBUTING.md`](CONTRIBUTING.md) before submitting device support.

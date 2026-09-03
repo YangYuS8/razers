@@ -460,10 +460,10 @@ pub fn validate(descriptor: &DeviceDescriptor) -> Vec<String> {
         }
     }
 
-    if let Some(battery) = &descriptor.capabilities.battery
-        && battery.driver.trim().is_empty()
-    {
-        problems.push("capabilities.battery.driver must not be empty".into());
+    if let Some(battery) = &descriptor.capabilities.battery {
+        if battery.driver.trim().is_empty() {
+            problems.push("capabilities.battery.driver must not be empty".into());
+        }
     }
 
     for evidence in &descriptor.evidence {

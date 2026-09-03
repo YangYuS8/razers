@@ -19,9 +19,9 @@ commit messages:
 
 Merging the generated Release PR is the only manual release gate. The same workflow
 then creates a `vX.Y.Z` tag and prerelease, builds `razersctl` for Linux x86-64 and
-ARM64, Windows x86-64, and macOS x86-64 and ARM64, and uploads deterministic archives
-with SHA-256 files. The workspace is intentionally git-only and is not published to
-crates.io during the pre-alpha phase.
+ARM64, Windows x86-64, and macOS x86-64 and ARM64. Each deterministic archive also
+contains the `razers` desktop application and a SHA-256 file. The workspace is
+intentionally git-only and is not published to crates.io during the pre-alpha phase.
 
 If an artifact runner has a transient failure, rerun the failed jobs. The workflow
 can also be dispatched with an existing `vX.Y.Z` tag to rebuild and replace that

@@ -91,8 +91,15 @@ razers-protocol-razer90
 razers-transport
 razers-transport-hidapi
 razers-device-registry
+razers-app
 razers-cli
 ```
+
+The desktop application currently consumes the same privacy-preserving descriptor
+summaries, curated manifests, and reconciled evidence as the CLI. Catalogs and
+manifests are embedded at build time so release binaries do not depend on a working
+directory or download device data at runtime. It exposes no control until a typed
+driver and the Agent boundary exist.
 
 Expected later boundaries include protocol-family crates, platform transport crates,
 an Agent core and executable, versioned IPC, profiles, actions, diagnostics, and a

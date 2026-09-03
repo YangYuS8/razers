@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
+    "crates/razers-app",
     "crates/razers-cli",
     "crates/razers-device-registry",
     "crates/razers-protocol-core",
@@ -23,6 +24,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 thiserror = "2.0.20"
 toml = "1.1.5"
 hidapi = "2.6.7"
+eframe = { version = "0.32.3", default-features = false, features = ["accesskit", "default_fonts", "glow", "wayland", "x11"] }
 razers-device-registry = { path = "crates/razers-device-registry" }
 razers-protocol-core = { path = "crates/razers-protocol-core" }
 razers-protocol-razer90 = { path = "crates/razers-protocol-razer90" }
