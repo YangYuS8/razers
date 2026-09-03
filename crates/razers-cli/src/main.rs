@@ -5,8 +5,8 @@ use std::{collections::BTreeMap, env, path::Path};
 use razers_device_registry::{
     DeviceKind, Registry,
     upstream::{
-        IrazerCatalog, IrazerDevice, OpenRgbCatalog, OpenRgbDevice, UpstreamCatalog,
-        UpstreamDevice, UpstreamFeature,
+        EvidenceAssessment, EvidenceReadiness, IrazerCatalog, IrazerDevice, OpenRgbCatalog,
+        OpenRgbDevice, UpstreamCatalog, UpstreamDevice, UpstreamFeature, assess_evidence,
     },
 };
 use razers_protocol_core::Report90;
@@ -22,6 +22,9 @@ USAGE:
   razersctl upstream validate [OPENRAZER_CATALOG OPENRGB_CATALOG IRAZER_CATALOG]
   razersctl upstream stats [OPENRAZER_CATALOG OPENRGB_CATALOG IRAZER_CATALOG]
   razersctl upstream lookup <VID:PID> [OPENRAZER_CATALOG OPENRGB_CATALOG IRAZER_CATALOG]
+  razersctl upstream assess <VID:PID> [OPENRAZER_CATALOG OPENRGB_CATALOG IRAZER_CATALOG]
+  razersctl upstream shortlist [OPENRAZER_CATALOG OPENRGB_CATALOG IRAZER_CATALOG]
+  razersctl upstream conflicts [OPENRAZER_CATALOG OPENRGB_CATALOG IRAZER_CATALOG]
   razersctl devices [DIRECTORY]
   razersctl report encode <COMMAND_CLASS> <COMMAND_ID> [ARGUMENT_HEX]
   razersctl report decode <REPORT_HEX>
@@ -109,6 +112,60 @@ fn run(args: Vec<String>) -> Result<(), String> {
         {
             upstream_lookup(
                 identity,
+                Path::new(openrazer),
+                Path::new(openrgb),
+                Path::new(irazer),
+            )
+        }
+        [group, command, identity] if group == "upstream" && command == "assess" => {
+            upstream_assess(
+                identity,
+                Path::new(DEFAULT_OPENRAZER_CATALOG),
+                Path::new(DEFAULT_OPENRGB_CATALOG),
+                Path::new(DEFAULT_IRAZER_CATALOG),
+            )
+        }
+        [group, command, identity, openrazer, openrgb, irazer]
+            if group == "upstream" && command == "assess" =>
+        {
+            upstream_assess(
+                identity,
+                Path::new(openrazer),
+                Path::new(openrgb),
+                Path::new(irazer),
+            )
+        }
+        [group, command] if group == "upstream" && command == "shortlist" => {
+            upstream_assessment_list(
+                EvidenceReadiness::Corroborated,
+                Path::new(DEFAULT_OPENRAZER_CATALOG),
+                Path::new(DEFAULT_OPENRGB_CATALOG),
+                Path::new(DEFAULT_IRAZER_CATALOG),
+            )
+        }
+        [group, command, openrazer, openrgb, irazer]
+            if group == "upstream" && command == "shortlist" =>
+        {
+            upstream_assessment_list(
+                EvidenceReadiness::Corroborated,
+                Path::new(openrazer),
+                Path::new(openrgb),
+                Path::new(irazer),
+            )
+        }
+        [group, command] if group == "upstream" && command == "conflicts" => {
+            upstream_assessment_list(
+                EvidenceReadiness::NeedsResearch,
+                Path::new(DEFAULT_OPENRAZER_CATALOG),
+                Path::new(DEFAULT_OPENRGB_CATALOG),
+                Path::new(DEFAULT_IRAZER_CATALOG),
+            )
+        }
+        [group, command, openrazer, openrgb, irazer]
+            if group == "upstream" && command == "conflicts" =>
+        {
+            upstream_assessment_list(
+                EvidenceReadiness::NeedsResearch,
                 Path::new(openrazer),
                 Path::new(openrgb),
                 Path::new(irazer),
@@ -358,6 +415,107 @@ fn upstream_lookup(
         print_irazer_device(device, &irazer);
     }
     Ok(())
+}
+
+fn upstream_assess(
+    identity: &str,
+    openrazer_path: &Path,
+    openrgb_path: &Path,
+    irazer_path: &Path,
+) -> Result<(), String> {
+    let (vid, pid) = parse_usb_identity(identity)?;
+    let assessments = load_evidence_assessments(openrazer_path, openrgb_path, irazer_path)?;
+    let assessment = assessments
+        .iter()
+        .find(|assessment| assessment.vid == vid && assessment.pid == pid)
+        .ok_or_else(|| format!("USB identity {vid:04x}:{pid:04x} is absent from all catalogs"))?;
+
+    println!("{}", format_evidence_assessment(assessment));
+    println!("note: readiness is a research triage result, not a RazeRS support claim");
+    Ok(())
+}
+
+fn upstream_assessment_list(
+    readiness: EvidenceReadiness,
+    openrazer_path: &Path,
+    openrgb_path: &Path,
+    irazer_path: &Path,
+) -> Result<(), String> {
+    let assessments = load_evidence_assessments(openrazer_path, openrgb_path, irazer_path)?;
+    let corroborated = count_readiness(&assessments, EvidenceReadiness::Corroborated);
+    let needs_research = count_readiness(&assessments, EvidenceReadiness::NeedsResearch);
+    let single_source = count_readiness(&assessments, EvidenceReadiness::SingleSource);
+    println!(
+        "assessment: total={}, corroborated={}, needs-research={}, single-source={}",
+        assessments.len(),
+        corroborated,
+        needs_research,
+        single_source
+    );
+    for assessment in assessments
+        .iter()
+        .filter(|assessment| assessment.readiness == readiness)
+    {
+        println!("{}", format_evidence_assessment(assessment));
+    }
+    println!("note: readiness is a research triage result, not a RazeRS support claim");
+    Ok(())
+}
+
+fn load_evidence_assessments(
+    openrazer_path: &Path,
+    openrgb_path: &Path,
+    irazer_path: &Path,
+) -> Result<Vec<EvidenceAssessment>, String> {
+    let openrazer = load_upstream_catalog(openrazer_path)?;
+    let openrgb = load_openrgb_catalog(openrgb_path)?;
+    let irazer = load_irazer_catalog(irazer_path)?;
+    Ok(assess_evidence(&openrazer, &openrgb, &irazer))
+}
+
+fn count_readiness(assessments: &[EvidenceAssessment], readiness: EvidenceReadiness) -> usize {
+    assessments
+        .iter()
+        .filter(|assessment| assessment.readiness == readiness)
+        .count()
+}
+
+fn format_evidence_assessment(assessment: &EvidenceAssessment) -> String {
+    let sources = assessment
+        .sources
+        .iter()
+        .map(|source| source.as_str())
+        .collect::<Vec<_>>()
+        .join(",");
+    let features = assessment
+        .openrazer_features
+        .iter()
+        .map(|feature| feature.as_str())
+        .collect::<Vec<_>>()
+        .join(",");
+    let features = if features.is_empty() {
+        "none"
+    } else {
+        features.as_str()
+    };
+    let irazer_support = assessment
+        .irazer_support
+        .map(|support| support.as_str())
+        .unwrap_or("absent");
+
+    format!(
+        "{:04x}:{:04x}\treadiness={}\tsources={}\tname={}\tkind={}\tmatrix={}\tprotocol={}\topenrazer-features={}\tirazer-support={}",
+        assessment.vid,
+        assessment.pid,
+        assessment.readiness.as_str(),
+        sources,
+        assessment.name_agreement.as_str(),
+        assessment.kind_agreement.as_str(),
+        assessment.matrix_agreement.as_str(),
+        assessment.protocol_agreement.as_str(),
+        features,
+        irazer_support
+    )
 }
 
 fn print_comparison(openrazer: &UpstreamCatalog, openrgb: &OpenRgbCatalog) {
@@ -717,5 +875,29 @@ mod tests {
             (0x1532, 0x0099)
         );
         assert!(parse_usb_identity("1532").is_err());
+    }
+
+    #[test]
+    fn formats_assessments_without_turning_readiness_into_support() {
+        let assessment = EvidenceAssessment {
+            vid: 0x1532,
+            pid: 0x0099,
+            sources: vec![
+                razers_device_registry::upstream::EvidenceSource::OpenRazer,
+                razers_device_registry::upstream::EvidenceSource::OpenRgb,
+            ],
+            name_agreement: razers_device_registry::upstream::EvidenceAgreement::Disagree,
+            kind_agreement: razers_device_registry::upstream::EvidenceAgreement::Agree,
+            matrix_agreement: razers_device_registry::upstream::EvidenceAgreement::Agree,
+            protocol_agreement: razers_device_registry::upstream::EvidenceAgreement::NotComparable,
+            readiness: EvidenceReadiness::Corroborated,
+            openrazer_features: vec![UpstreamFeature::Dpi, UpstreamFeature::Lighting],
+            irazer_support: None,
+        };
+
+        assert_eq!(
+            format_evidence_assessment(&assessment),
+            "1532:0099\treadiness=corroborated\tsources=OpenRazer,OpenRGB\tname=disagree\tkind=agree\tmatrix=agree\tprotocol=not-comparable\topenrazer-features=dpi,lighting\tirazer-support=absent"
+        );
     }
 }
