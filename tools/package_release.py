@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-"""Create a deterministic razersctl release archive and SHA-256 file."""
+"""Create a deterministic RazeRS release archive and SHA-256 file."""
 
 from __future__ import annotations
 
@@ -21,15 +21,17 @@ TAG_PATTERN = re.compile(r"v[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?")
 FIXED_ZIP_TIME = (1980, 1, 1, 0, 0, 0)
 
 
-def binary_path(target: str) -> Path:
+def binary_paths(target: str) -> list[Path]:
     suffix = ".exe" if "windows" in target else ""
-    return Path("target") / target / "release" / f"razersctl{suffix}"
+    directory = Path("target") / target / "release"
+    return [directory / f"razers{suffix}", directory / f"razersctl{suffix}"]
 
 
-def copy_payload(staging: Path, binary: Path) -> None:
-    destination = staging / binary.name
-    shutil.copyfile(binary, destination)
-    destination.chmod(0o755)
+def copy_payload(staging: Path, binaries: list[Path]) -> None:
+    for binary in binaries:
+        destination = staging / binary.name
+        shutil.copyfile(binary, destination)
+        destination.chmod(0o755)
     for name in ("README.md", "LICENSE", "CHANGELOG.md"):
         shutil.copyfile(name, staging / name)
 
@@ -54,7 +56,7 @@ def write_zip(archive: Path, staging: Path) -> None:
         for path in sorted(staging.iterdir(), key=lambda item: item.name):
             info = zipfile.ZipInfo(path.name, FIXED_ZIP_TIME)
             info.compress_type = zipfile.ZIP_DEFLATED
-            info.external_attr = (0o755 if path.suffix == ".exe" else 0o644) << 16
+            info.external_attr = (path.stat().st_mode & 0o777) << 16
             output.writestr(info, path.read_bytes())
 
 
@@ -73,9 +75,10 @@ def main() -> None:
 
     if TAG_PATTERN.fullmatch(args.tag) is None:
         raise SystemExit(f"invalid release tag: {args.tag}")
-    binary = binary_path(args.target)
-    if not binary.is_file():
-        raise SystemExit(f"release binary not found: {binary}")
+    binaries = binary_paths(args.target)
+    missing = [binary for binary in binaries if not binary.is_file()]
+    if missing:
+        raise SystemExit(f"release binary not found: {missing[0]}")
 
     output_directory = Path("dist")
     output_directory.mkdir(exist_ok=True)
@@ -84,7 +87,7 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory(prefix="razers-release-") as temporary:
         staging = Path(temporary)
-        copy_payload(staging, binary)
+        copy_payload(staging, binaries)
         if extension == ".zip":
             write_zip(archive, staging)
         else:
