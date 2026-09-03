@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.0](https://github.com/YangYuS8/razers/compare/v0.1.0...v0.2.0) (2026-09-03)
+
+
+### Features
+
+* add user-facing desktop app shell ([#7](https://github.com/YangYuS8/razers/issues/7)) ([ac5d8c6](https://github.com/YangYuS8/razers/commit/ac5d8c63fa4df1ce028e97f6fc9a8a28a5ae50de))
+* add versioned local agent IPC ([#8](https://github.com/YangYuS8/razers/issues/8)) ([3ba36c3](https://github.com/YangYuS8/razers/commit/3ba36c337b78fe7cac3afc39f8307cae0f08f6cd))
+* assess reusable upstream device evidence ([#6](https://github.com/YangYuS8/razers/issues/6)) ([4792ed6](https://github.com/YangYuS8/razers/commit/4792ed66e1bdc322f6049d3770c8606dccd001c7))
+
+
+### Bug Fixes
+
+* **ci:** tolerate pre-approved release checks ([#3](https://github.com/YangYuS8/razers/issues/3)) ([bfeb1e8](https://github.com/YangYuS8/razers/commit/bfeb1e8340a79962686be26c22670b115e4f0f0f))
+
 ## 0.1.0 (2026-09-03)
 
 
