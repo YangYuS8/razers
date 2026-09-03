@@ -15,6 +15,8 @@ cargo run -p razers-cli -- upstream validate
 All Rust source files should carry `SPDX-License-Identifier: GPL-2.0-or-later`.
 Document the origin of protocol facts and device metadata using a pinned upstream
 commit. Do not copy code from an incompatible license.
+Use Conventional Commit subjects so the automated Release PR can derive versions
+and changelog sections; see [`docs/releases.md`](docs/releases.md).
 
 ## Upstream data import
 

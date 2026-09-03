@@ -1,0 +1,124 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing vX.Y.Z release to rebuild (leave empty for normal automation)
+        required: false
+        type: string
+
+permissions: {}
+
+env:
+  CARGO_TERM_COLOR: always
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  automate:
+    name: Maintain Release PR or publish approved release
+    if: github.repository == 'YangYuS8/razers'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      package: ${{ steps.release.outputs.release_created == 'true' || inputs.tag != '' }}
+      tag: ${{ steps.release.outputs.tag_name || inputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0
+        with:
+          fetch-depth: 0
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
+      - name: Update Release PR or create tag and GitHub Release
+        id: release
+        if: github.event_name != 'workflow_dispatch' || inputs.tag == ''
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Refresh Cargo.lock in the Release PR
+        id: release-branch
+        if: steps.release.outputs.prs_created == 'true'
+        env:
+          RELEASE_PR: ${{ steps.release.outputs.pr }}
+        run: |
+          branch=$(jq -r '.headBranchName' <<<"$RELEASE_PR")
+          git fetch origin "$branch"
+          git switch --detach FETCH_HEAD
+          cargo update --workspace
+          if ! git diff --quiet -- Cargo.lock; then
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add Cargo.lock
+            git commit -m "chore: refresh lockfile for release"
+            git push origin "HEAD:$branch"
+          fi
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+      - name: Run CI for the bot-created Release PR
+        if: steps.release.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_BRANCH: ${{ steps.release-branch.outputs.branch }}
+        run: gh workflow run ci.yml --ref "$RELEASE_BRANCH"
+
+  artifacts:
+    name: Package ${{ matrix.target }}
+    needs: automate
+    if: needs.automate.outputs.package == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+          - runner: windows-2025
+            target: x86_64-pc-windows-msvc
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+          - runner: macos-15
+            target: aarch64-apple-darwin
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout released tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0
+        with:
+          ref: ${{ needs.automate.outputs.tag }}
+          persist-credentials: false
+      - name: Install Linux HID build dependency
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --yes libudev-dev
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: release-${{ matrix.target }}
+      - name: Build razersctl
+        run: cargo build --locked --release --package razers-cli --target ${{ matrix.target }}
+      - name: Package binary and checksum
+        env:
+          RELEASE_TAG: ${{ needs.automate.outputs.tag }}
+          RELEASE_TARGET: ${{ matrix.target }}
+        shell: bash
+        run: python tools/package_release.py --tag "$RELEASE_TAG" --target "$RELEASE_TARGET"
+      - name: Upload assets to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.automate.outputs.tag }}
+        shell: bash
+        run: gh release upload "$RELEASE_TAG" dist/* --clobber

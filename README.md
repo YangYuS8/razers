@@ -42,6 +42,8 @@ their respective owners.
 
 The architectural boundaries and roadmap are documented in
 [`docs/architecture.md`](docs/architecture.md).
+Release automation and dependency policy are documented in
+[`docs/releases.md`](docs/releases.md).
 
 ## Quick start
 
@@ -91,6 +93,7 @@ Milestone 0 is complete, and descriptor-only enumeration begins Milestone 1:
 - [x] Developer CLI for registry and packet inspection
 - [x] CI, safety policy, contribution guide, and source provenance
 - [x] Cross-platform HID enumeration without opening devices
+- [x] Descriptor-only HID collection classification that never authorizes writes
 - [x] Reproducible import of 267 OpenRazer, 196 OpenRGB, and 192 iRazer records
 - [x] Cross-source comparison without silently resolving conflicting facts
 - [ ] Safe, read-only identification of the first physical device
