@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-use std::{env, path::Path};
+use std::{collections::BTreeMap, env, path::Path};
 
-use razers_device_registry::{DeviceKind, Registry};
+use razers_device_registry::{
+    DeviceKind, Registry,
+    upstream::{UpstreamCatalog, UpstreamDevice, UpstreamFeature},
+};
 use razers_protocol_core::Report90;
 use razers_transport_hidapi::{HidInterfaceSummary, enumerate_razer};
 use razers_types::{DeviceId, SupportStatus};
@@ -13,6 +16,9 @@ USAGE:
   razersctl registry validate [DIRECTORY]
   razersctl registry list [DIRECTORY]
   razersctl registry show <DEVICE_ID> [DIRECTORY]
+  razersctl upstream validate [CATALOG]
+  razersctl upstream stats [CATALOG]
+  razersctl upstream lookup <VID:PID> [CATALOG]
   razersctl devices [DIRECTORY]
   razersctl report encode <COMMAND_CLASS> <COMMAND_ID> [ARGUMENT_HEX]
   razersctl report decode <REPORT_HEX>
@@ -20,7 +26,11 @@ USAGE:
 
 Numeric command fields accept decimal or 0x-prefixed hexadecimal values.
 Registry commands default to ./devices. This milestone never opens hardware.
+Upstream commands default to ./data/upstream/openrazer-devices.toml. Catalog
+entries are source evidence, not RazeRS hardware-support claims.
 "#;
+
+const DEFAULT_UPSTREAM_CATALOG: &str = "data/upstream/openrazer-devices.toml";
 
 fn main() {
     if let Err(error) = run(env::args().skip(1).collect()) {
@@ -60,6 +70,24 @@ fn run(args: Vec<String>) -> Result<(), String> {
         }
         [group, command, id, directory] if group == "registry" && command == "show" => {
             registry_show(id, Path::new(directory))
+        }
+        [group, command] if group == "upstream" && command == "validate" => {
+            upstream_validate(Path::new(DEFAULT_UPSTREAM_CATALOG))
+        }
+        [group, command, catalog] if group == "upstream" && command == "validate" => {
+            upstream_validate(Path::new(catalog))
+        }
+        [group, command] if group == "upstream" && command == "stats" => {
+            upstream_stats(Path::new(DEFAULT_UPSTREAM_CATALOG))
+        }
+        [group, command, catalog] if group == "upstream" && command == "stats" => {
+            upstream_stats(Path::new(catalog))
+        }
+        [group, command, identity] if group == "upstream" && command == "lookup" => {
+            upstream_lookup(identity, Path::new(DEFAULT_UPSTREAM_CATALOG))
+        }
+        [group, command, identity, catalog] if group == "upstream" && command == "lookup" => {
+            upstream_lookup(identity, Path::new(catalog))
         }
         [command] if command == "devices" => devices(Path::new("devices")),
         [command, directory] if command == "devices" => devices(Path::new(directory)),
@@ -158,8 +186,117 @@ fn registry_show(id: &str, directory: &Path) -> Result<(), String> {
     Ok(())
 }
 
+fn load_upstream_catalog(path: &Path) -> Result<UpstreamCatalog, String> {
+    UpstreamCatalog::load_file(path).map_err(|error| error.to_string())
+}
+
+fn upstream_validate(path: &Path) -> Result<(), String> {
+    let catalog = load_upstream_catalog(path)?;
+    println!(
+        "validated {} evidence-only device identities from {}@{}",
+        catalog.devices.len(),
+        catalog.source.repository,
+        &catalog.source.commit[..12]
+    );
+    Ok(())
+}
+
+fn upstream_stats(path: &Path) -> Result<(), String> {
+    let catalog = load_upstream_catalog(path)?;
+    let mut kinds = BTreeMap::new();
+    let mut features = BTreeMap::new();
+    for device in &catalog.devices {
+        *kinds.entry(device.kind.as_str()).or_insert(0_usize) += 1;
+        for feature in &device.upstream_features {
+            *features.entry(feature.as_str()).or_insert(0_usize) += 1;
+        }
+    }
+
+    println!("source: {}", catalog.source.name);
+    println!("repository: {}", catalog.source.repository);
+    println!("commit: {}", catalog.source.commit);
+    println!("devices: {}", catalog.devices.len());
+    println!(
+        "kinds: {}",
+        kinds
+            .into_iter()
+            .map(|(kind, count)| format!("{kind}={count}"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+    println!(
+        "upstream features: {}",
+        features
+            .into_iter()
+            .map(|(feature, count)| format!("{feature}={count}"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+    println!("support status: evidence only; hardware verification required");
+    Ok(())
+}
+
+fn upstream_lookup(identity: &str, path: &Path) -> Result<(), String> {
+    let (vid, pid) = parse_usb_identity(identity)?;
+    let catalog = load_upstream_catalog(path)?;
+    let device = catalog
+        .find_usb(vid, pid)
+        .ok_or_else(|| format!("USB identity {vid:04x}:{pid:04x} is absent from the catalog"))?;
+    print_upstream_device(device, &catalog);
+    Ok(())
+}
+
+fn print_upstream_device(device: &UpstreamDevice, catalog: &UpstreamCatalog) {
+    println!("name: {}", device.name);
+    println!("kind: {}", device.kind.as_str());
+    println!("usb: {:04x}:{:04x}", device.vid, device.pid);
+    println!(
+        "upstream features: {}",
+        feature_names(&device.upstream_features)
+    );
+    if let Some([rows, columns]) = device.matrix {
+        println!("matrix: {rows}x{columns}");
+    }
+    if let Some(max_dpi) = device.max_dpi {
+        println!("max dpi: {max_dpi}");
+    }
+    if !device.poll_rates_hz.is_empty() {
+        println!(
+            "poll rates: {} Hz",
+            device
+                .poll_rates_hz
+                .iter()
+                .map(u32::to_string)
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+    }
+    println!("upstream methods: {}", device.methods.join(", "));
+    println!(
+        "evidence: {}/{}@{}:{}",
+        catalog.source.repository,
+        device.source_path,
+        &catalog.source.commit[..12],
+        device.source_symbol
+    );
+    println!("support status: evidence only; hardware verification required");
+}
+
+fn feature_names(features: &[UpstreamFeature]) -> String {
+    features
+        .iter()
+        .map(|feature| feature.as_str())
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 fn devices(directory: &Path) -> Result<(), String> {
     let registry = load_registry(directory)?;
+    let upstream_path = Path::new(DEFAULT_UPSTREAM_CATALOG);
+    let upstream = upstream_path
+        .is_file()
+        .then(|| load_upstream_catalog(upstream_path))
+        .transpose()?;
     let interfaces = enumerate_razer().map_err(|error| error.to_string())?;
     if interfaces.is_empty() {
         println!("no Razer HID interfaces detected");
@@ -167,12 +304,16 @@ fn devices(directory: &Path) -> Result<(), String> {
     }
 
     for interface in interfaces {
-        print_interface(&registry, &interface);
+        print_interface(&registry, upstream.as_ref(), &interface);
     }
     Ok(())
 }
 
-fn print_interface(registry: &Registry, interface: &HidInterfaceSummary) {
+fn print_interface(
+    registry: &Registry,
+    upstream: Option<&UpstreamCatalog>,
+    interface: &HidInterfaceSummary,
+) {
     let matches = registry
         .iter()
         .filter(|loaded| {
@@ -193,9 +334,13 @@ fn print_interface(registry: &Registry, interface: &HidInterfaceSummary) {
     } else {
         matches.join(",")
     };
+    let upstream_match = upstream
+        .and_then(|catalog| catalog.find_usb(interface.vendor_id, interface.product_id))
+        .map(|device| device.name.as_str())
+        .unwrap_or("unknown");
 
     println!(
-        "{:04x}:{:04x}\tinterface={}\tusage={:04x}:{:04x}\tproduct={}\tserial={}\tregistry={}",
+        "{:04x}:{:04x}\tinterface={}\tusage={:04x}:{:04x}\tproduct={}\tserial={}\tregistry={}\tupstream={}",
         interface.vendor_id,
         interface.product_id,
         interface.interface_number,
@@ -207,8 +352,20 @@ fn print_interface(registry: &Registry, interface: &HidInterfaceSummary) {
         } else {
             "absent"
         },
-        registry_match
+        registry_match,
+        upstream_match
     );
+}
+
+fn parse_usb_identity(value: &str) -> Result<(u16, u16), String> {
+    let (vid, pid) = value
+        .split_once(':')
+        .ok_or_else(|| format!("'{value}' must use VID:PID hexadecimal form"))?;
+    let parse = |part: &str| {
+        u16::from_str_radix(part.strip_prefix("0x").unwrap_or(part), 16)
+            .map_err(|_| format!("'{value}' must use VID:PID hexadecimal form"))
+    };
+    Ok((parse(vid)?, parse(pid)?))
 }
 
 fn report_encode(class: &str, id: &str, arguments: &str) -> Result<(), String> {
@@ -312,5 +469,15 @@ mod tests {
     #[test]
     fn rejects_partial_hex_bytes() {
         assert!(parse_hex("abc").is_err());
+    }
+
+    #[test]
+    fn parses_usb_identities_as_hexadecimal() {
+        assert_eq!(parse_usb_identity("1532:0099").unwrap(), (0x1532, 0x0099));
+        assert_eq!(
+            parse_usb_identity("0x1532:0x0099").unwrap(),
+            (0x1532, 0x0099)
+        );
+        assert!(parse_usb_identity("1532").is_err());
     }
 }

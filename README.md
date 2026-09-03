@@ -11,8 +11,8 @@ and verified without building a device-specific UI for every product.
 > [!WARNING]
 > RazeRS is pre-alpha software. It does not send commands to real hardware yet.
 > The current release contains protocol codecs, replayable transport tests, a
-> versioned device registry, privacy-preserving HID enumeration, and developer
-> CLI tools.
+> versioned device registry, a pinned OpenRazer evidence catalog,
+> privacy-preserving HID enumeration, and developer CLI tools.
 
 RazeRS is an independent community project. It is not affiliated with, endorsed
 by, or sponsored by Razer Inc. Razer and related product names are trademarks of
@@ -51,6 +51,8 @@ and the libudev development files (`libudev-dev` on Debian/Ubuntu; provided by
 ```bash
 cargo test --workspace
 cargo run -p razers-cli -- registry validate devices
+cargo run -p razers-cli -- upstream validate
+cargo run -p razers-cli -- upstream stats
 cargo run -p razers-cli -- registry list devices
 cargo run -p razers-cli -- devices devices
 ```
@@ -59,6 +61,12 @@ Inspect a registry entry:
 
 ```bash
 cargo run -p razers-cli -- registry show razer.basilisk-v3 devices
+```
+
+Look up source-derived facts for any imported USB identity:
+
+```bash
+cargo run -p razers-cli -- upstream lookup 1532:0099
 ```
 
 Encode and decode a protocol packet without touching hardware:
@@ -81,13 +89,16 @@ Milestone 0 is complete, and descriptor-only enumeration begins Milestone 1:
 - [x] Developer CLI for registry and packet inspection
 - [x] CI, safety policy, contribution guide, and source provenance
 - [x] Cross-platform HID enumeration without opening devices
+- [x] Reproducible import of 267 OpenRazer device identities and feature hints
 - [ ] Safe, read-only identification of the first physical device
 - [ ] Agent and versioned local IPC
 - [ ] Capability-driven desktop UI
 
 ## Source provenance and licensing
 
-Protocol facts and initial device metadata are traced to pinned upstream sources.
+Protocol facts and device metadata are traced to pinned upstream sources. The
+generated OpenRazer catalog is evidence-only: an entry does not claim that RazeRS
+can control or has tested that device.
 See [`docs/provenance.md`](docs/provenance.md) and the `evidence` entries in each
 device manifest. Code in this repository is licensed under
 GPL-2.0-or-later; see [`LICENSE`](LICENSE).

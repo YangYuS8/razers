@@ -24,6 +24,20 @@ Relevant upstream locations:
 - [`daemon/openrazer_daemon/hardware/mouse.py`](https://github.com/openrazer/openrazer/blob/6820f9da169d354bc7e6e93a0aa8683a6bb75792/daemon/openrazer_daemon/hardware/mouse.py)
   records its 26,000 DPI maximum, 1x11 lighting matrix, and upstream feature list.
 
+### Generated evidence catalog
+
+[`data/upstream/openrazer-devices.toml`](../data/upstream/openrazer-devices.toml)
+contains 267 USB identities extracted from the seven concrete device modules under
+`daemon/openrazer_daemon/hardware`. The deterministic importer preserves each source
+path and class symbol along with OpenRazer's advertised methods, matrix dimensions,
+DPI limits, polling-rate lists, and conservative feature hints.
+
+The importer at [`tools/import_openrazer.py`](../tools/import_openrazer.py) accepts
+only a Git checkout at the pinned commit above. The Rust catalog parser rejects
+duplicate VID/PID pairs, malformed provenance, invalid dimensions, and invalid
+numeric data. This makes upstream refreshes reviewable instead of silently consuming
+the latest branch.
+
 OpenRazer is licensed GPL-2.0-or-later. RazeRS is also GPL-2.0-or-later and retains
 file-level SPDX identifiers. This project currently contains a new Rust implementation
 of the documented wire format, not a line-by-line translation of an upstream driver.
@@ -34,3 +48,7 @@ An upstream implementation is evidence that a protocol fact or device identity i
 plausible. It is not a RazeRS hardware verification. Device manifests remain marked
 `detected` or `experimental` until a named capability passes the project's own tests
 on a recorded operating-system and firmware combination.
+
+The generated catalog therefore stays separate from curated `devices/*.toml`
+manifests. It can name an attached device and guide implementation, but it cannot
+select a protocol driver or authorize hardware writes.

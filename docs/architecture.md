@@ -54,6 +54,17 @@ User interfaces render capability descriptors rather than device-specific pages.
 Adding a product should normally mean adding a manifest, choosing existing drivers,
 and attaching evidence and tests.
 
+Source-derived catalogs and curated manifests are separate layers:
+
+```text
+Pinned upstream source -> generated evidence catalog -> curated device manifest
+                                                        -> hardware verification
+```
+
+The evidence catalog supplies known identities and implementation leads. Only a
+curated manifest may select protocol and capability drivers, and only verification
+records may claim working support.
+
 ## Concurrency model
 
 Vendor request-response exchanges are serialized per physical connection. The future

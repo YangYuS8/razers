@@ -2,6 +2,8 @@
 
 //! Versioned, declarative device manifests and their validation rules.
 
+pub mod upstream;
+
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs, io,

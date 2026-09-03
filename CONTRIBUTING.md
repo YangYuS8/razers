@@ -9,11 +9,30 @@ cargo fmt --all --check
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-features
 cargo run -p razers-cli -- registry validate devices
+cargo run -p razers-cli -- upstream validate
 ```
 
 All Rust source files should carry `SPDX-License-Identifier: GPL-2.0-or-later`.
 Document the origin of protocol facts and device metadata using a pinned upstream
 commit. Do not copy code from an incompatible license.
+
+## Upstream data import
+
+`data/upstream/openrazer-devices.toml` is generated from the exact OpenRazer commit
+recorded in `tools/import_openrazer.py`. It preserves USB identities, class symbols,
+advertised methods, matrix dimensions, DPI limits, polling rates, and derived feature
+hints. Regenerate it from a checkout at that commit with:
+
+```bash
+python3 tools/import_openrazer.py \
+  --source /path/to/openrazer \
+  --output data/upstream/openrazer-devices.toml
+```
+
+Do not edit the generated catalog by hand. Updating the pinned commit requires a
+review of source licensing, importer output, and semantic changes. Imported facts
+remain evidence-only until a curated manifest and hardware verification establish
+RazeRS support.
 
 ## Device contributions
 
