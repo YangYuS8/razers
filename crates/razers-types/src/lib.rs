@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-//! Shared, transport-independent types used across the Razers workspace.
+//! Shared, transport-independent types used across the RazeRS workspace.
 
 use std::{fmt, str::FromStr};
 

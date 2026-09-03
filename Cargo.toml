@@ -15,7 +15,7 @@ edition = "2024"
 rust-version = "1.85"
 license = "GPL-2.0-or-later"
 repository = "https://github.com/YangYuS8/razers"
-authors = ["YangYuS8 and Razers contributors"]
+authors = ["YangYuS8 and RazeRS contributors"]
 
 [workspace.dependencies]
 serde = { version = "1.0.229", features = ["derive"] }

@@ -5,7 +5,7 @@ kind = "mouse"
 
 [support]
 status = "detected"
-notes = "Identity and capabilities are imported from pinned OpenRazer metadata; Razers has not performed hardware writes or cross-platform verification."
+notes = "Identity and capabilities are imported from pinned OpenRazer metadata; RazeRS has not performed hardware writes or cross-platform verification."
 
 [[connections]]
 id = "wired"

@@ -1,6 +1,6 @@
 # Security policy
 
-Razers is pre-alpha software and currently has no supported release series.
+RazeRS is pre-alpha software and currently has no supported release series.
 
 Please report security issues privately through GitHub's **Report a vulnerability**
 feature instead of opening a public issue. Include the affected commit, operating

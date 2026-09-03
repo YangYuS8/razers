@@ -1,6 +1,6 @@
 [package]
 name = "razers-transport"
-description = "Transport abstractions and replay tools for Razers"
+description = "Transport abstractions and replay tools for RazeRS"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

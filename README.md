@@ -1,20 +1,20 @@
-# Razers
+# RazeRS
 
 [![CI](https://github.com/YangYuS8/razers/actions/workflows/ci.yml/badge.svg)](https://github.com/YangYuS8/razers/actions/workflows/ci.yml)
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)](LICENSE)
 
-Razers is an experimental, cross-platform, user-space foundation for controlling
+RazeRS is an experimental, cross-platform, user-space foundation for controlling
 Razer peripherals. The project separates byte transport, vendor protocols, device
 capabilities, and user-facing applications so that hardware support can be added
 and verified without building a device-specific UI for every product.
 
 > [!WARNING]
-> Razers is pre-alpha software. It does not send commands to real hardware yet.
+> RazeRS is pre-alpha software. It does not send commands to real hardware yet.
 > The current release contains protocol codecs, replayable transport tests, a
 > versioned device registry, privacy-preserving HID enumeration, and developer
 > CLI tools.
 
-Razers is an independent community project. It is not affiliated with, endorsed
+RazeRS is an independent community project. It is not affiliated with, endorsed
 by, or sponsored by Razer Inc. Razer and related product names are trademarks of
 their respective owners.
 

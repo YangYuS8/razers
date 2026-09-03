@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem in Razers
+description: Report a reproducible problem in RazeRS
 title: "bug: "
 labels: ["bug"]
 body:
@@ -9,7 +9,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Razers version or commit
+      label: RazeRS version or commit
     validations:
       required: true
   - type: input

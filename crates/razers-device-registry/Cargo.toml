@@ -1,6 +1,6 @@
 [package]
 name = "razers-device-registry"
-description = "Versioned device manifests and validation for Razers"
+description = "Versioned device manifests and validation for RazeRS"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

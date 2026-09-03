@@ -1,6 +1,6 @@
 [package]
 name = "razers-types"
-description = "Shared domain types for the Razers device platform"
+description = "Shared domain types for the RazeRS device platform"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

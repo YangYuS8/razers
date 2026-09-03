@@ -1,6 +1,6 @@
 [package]
 name = "razers-transport-hidapi"
-description = "Cross-platform HID enumeration and transport support for Razers"
+description = "Cross-platform HID enumeration and transport support for RazeRS"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

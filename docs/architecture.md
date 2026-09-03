@@ -1,7 +1,7 @@
 # Architecture
 
-Razers is a cross-platform, user-space device control platform. Operating-system
-HID drivers remain responsible for ordinary keyboard, mouse, and audio input. Razers
+RazeRS is a cross-platform, user-space device control platform. Operating-system
+HID drivers remain responsible for ordinary keyboard, mouse, and audio input. RazeRS
 handles vendor-specific configuration such as lighting, DPI, polling rate, battery,
 power management, equalizers, and eventually input actions.
 

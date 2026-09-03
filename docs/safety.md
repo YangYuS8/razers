@@ -1,6 +1,6 @@
 # Hardware safety policy
 
-Razers is designed for reversible device configuration, but vendor commands can still
+RazeRS is designed for reversible device configuration, but vendor commands can still
 disconnect devices, corrupt persistent settings, or make firmware unusable. Safety is
 an architectural requirement rather than a user-interface warning added later.
 

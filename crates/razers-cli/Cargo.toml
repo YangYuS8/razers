@@ -1,6 +1,6 @@
 [package]
 name = "razers-cli"
-description = "Developer command-line tools for Razers"
+description = "Developer command-line tools for RazeRS"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

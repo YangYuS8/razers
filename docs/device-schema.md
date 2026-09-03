@@ -106,7 +106,7 @@ license = "GPL-2.0-or-later"
 ```
 
 Use a complete commit SHA and exact path/symbol. Evidence states where a fact came
-from; it does not by itself establish that Razers works with the device.
+from; it does not by itself establish that RazeRS works with the device.
 
 ## Verification
 

@@ -1,4 +1,4 @@
-# Contributing to Razers
+# Contributing to RazeRS
 
 Thank you for helping build safe, verifiable support for Razer hardware.
 

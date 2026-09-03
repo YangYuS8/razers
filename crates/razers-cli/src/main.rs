@@ -7,7 +7,7 @@ use razers_protocol_core::Report90;
 use razers_transport_hidapi::{HidInterfaceSummary, enumerate_razer};
 use razers_types::{DeviceId, SupportStatus};
 
-const HELP: &str = r#"razersctl - hardware-free Razers developer tools
+const HELP: &str = r#"razersctl - hardware-free RazeRS developer tools
 
 USAGE:
   razersctl registry validate [DIRECTORY]
