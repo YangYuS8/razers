@@ -64,12 +64,28 @@ jobs:
             git push origin "HEAD:$branch"
           fi
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
-      - name: Run CI for the bot-created Release PR
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Approve CI for the bot-created Release PR
         if: steps.release.outputs.prs_created == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_BRANCH: ${{ steps.release-branch.outputs.branch }}
-        run: gh workflow run ci.yml --ref "$RELEASE_BRANCH"
+          RELEASE_SHA: ${{ steps.release-branch.outputs.sha }}
+        run: |
+          for attempt in {1..10}; do
+            run_ids=$(gh api \
+              "repos/${GITHUB_REPOSITORY}/actions/runs?event=pull_request&head_sha=${RELEASE_SHA}&status=action_required&per_page=100" \
+              --jq '.workflow_runs[].id')
+            if [[ -n "$run_ids" ]]; then
+              while read -r run_id; do
+                gh api --method POST \
+                  "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/approve"
+              done <<<"$run_ids"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "CI approval run did not appear for ${RELEASE_SHA}" >&2
+          exit 1
 
   artifacts:
     name: Package ${{ matrix.target }}
