@@ -74,3 +74,23 @@ The two catalogs overlap on 172 USB identities. They currently contain 72 naming
 differences and 18 matrix-dimension differences. RazeRS reports these disagreements
 instead of choosing one source automatically; a curated manifest must resolve them
 with device-specific evidence.
+
+## iRazer cross-platform catalog
+
+The iRazer catalog is imported from commit:
+
+```text
+7cc856ddd26edd9523a12a540b6d95a4ea3a54c4
+```
+
+[`data/upstream/irazer-devices.toml`](../data/upstream/irazer-devices.toml)
+contains all 192 entries in iRazer's
+[`DeviceCatalog.swift`](https://github.com/hanley-tech/iRazer/blob/7cc856ddd26edd9523a12a540b6d95a4ea3a54c4/Sources/iRazer/DeviceCatalog.swift).
+The deterministic importer preserves USB identities, category, capability labels,
+matrix family, transaction ID, and the source project's support label. iRazer is
+MIT-licensed.
+
+iRazer and OpenRGB overlap on 189 identities with no matrix-family or transaction-ID
+disagreements at these pinned commits. iRazer additionally records the Nommo V2 Pro,
+Nommo V2, and Nommo V2 X. An iRazer `supported` label is displayed explicitly as an
+upstream claim and remains evidence-only in RazeRS until independently verified.

@@ -22,7 +22,9 @@ The catalogs under `data/upstream` are generated from the exact source commits
 recorded in their importers. The OpenRazer catalog preserves USB identities, class
 symbols, advertised methods, matrix dimensions, DPI limits, polling rates, and
 derived feature hints. The OpenRGB catalog adds lighting matrix families,
-transaction IDs, dimensions, zone symbols, and keyboard layout symbols.
+transaction IDs, dimensions, zone symbols, and keyboard layout symbols. The iRazer
+catalog supplies a second cross-platform inventory with capability labels and its
+own upstream support claims; those labels never become RazeRS support claims.
 
 Regenerate them from checkouts at their pinned commits with:
 
@@ -33,6 +35,9 @@ python3 tools/import_openrazer.py \
 python3 tools/import_openrgb.py \
   --source /path/to/OpenRGB \
   --output data/upstream/openrgb-devices.toml
+python3 tools/import_irazer.py \
+  --source /path/to/iRazer \
+  --output data/upstream/irazer-devices.toml
 ```
 
 Do not edit generated catalogs by hand. Updating a pinned commit requires a

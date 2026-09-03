@@ -210,6 +210,51 @@ pub struct CatalogComparison {
     pub matrix_differences: usize,
 }
 
+pub const SUPPORTED_IRAZER_SCHEMA_VERSION: u32 = 1;
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct IrazerCatalog {
+    pub schema_version: u32,
+    pub source: UpstreamSource,
+    pub devices: Vec<IrazerDevice>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct IrazerDevice {
+    pub source_id: String,
+    pub name: String,
+    pub kind: OpenRgbDeviceKind,
+    pub vid: u16,
+    pub pid: u16,
+    pub upstream_support: UpstreamSupportClaim,
+    #[serde(default)]
+    pub capability_labels: Vec<String>,
+    pub matrix_family: MatrixFamily,
+    pub transaction_id: u8,
+    pub source_path: String,
+    pub source_symbol: String,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum UpstreamSupportClaim {
+    Experimental,
+    Planned,
+    Supported,
+}
+
+impl UpstreamSupportClaim {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Experimental => "experimental",
+            Self::Planned => "planned",
+            Self::Supported => "supported",
+        }
+    }
+}
+
 impl UpstreamCatalog {
     pub fn load_file(path: impl AsRef<Path>) -> Result<Self, UpstreamCatalogError> {
         let path = path.as_ref();
@@ -478,6 +523,110 @@ impl OpenRgbCatalog {
     }
 }
 
+impl IrazerCatalog {
+    pub fn load_file(path: impl AsRef<Path>) -> Result<Self, IrazerCatalogError> {
+        let path = path.as_ref();
+        let source = fs::read_to_string(path).map_err(|source| IrazerCatalogError::Io {
+            path: path.to_path_buf(),
+            source,
+        })?;
+        let catalog: Self =
+            toml::from_str(&source).map_err(|source| IrazerCatalogError::Parse {
+                path: path.to_path_buf(),
+                source,
+            })?;
+        let problems = catalog.validate();
+        if problems.is_empty() {
+            Ok(catalog)
+        } else {
+            Err(IrazerCatalogError::Validation {
+                path: path.to_path_buf(),
+                problems,
+            })
+        }
+    }
+
+    pub fn validate(&self) -> Vec<String> {
+        let mut problems = Vec::new();
+        if self.schema_version != SUPPORTED_IRAZER_SCHEMA_VERSION {
+            problems.push(format!(
+                "schema_version must be {SUPPORTED_IRAZER_SCHEMA_VERSION}, found {}",
+                self.schema_version
+            ));
+        }
+        validate_source(&self.source, &mut problems);
+        if self.devices.is_empty() {
+            problems.push("catalog must contain at least one device".into());
+        }
+
+        let source_root = Path::new(&self.source.path);
+        let mut identities = BTreeSet::new();
+        let mut source_ids = BTreeSet::new();
+        for device in &self.devices {
+            if !identities.insert((device.vid, device.pid)) {
+                problems.push(format!(
+                    "duplicate USB identity {:04x}:{:04x}",
+                    device.vid, device.pid
+                ));
+            }
+            if !source_ids.insert(device.source_id.as_str()) {
+                problems.push(format!("duplicate source_id '{}'", device.source_id));
+            }
+            if device.vid == 0 || device.pid == 0 {
+                problems.push(format!(
+                    "device '{}': VID and PID must be non-zero",
+                    device.name
+                ));
+            }
+            if device.name.trim().is_empty()
+                || device.source_id.trim().is_empty()
+                || device.source_symbol.trim().is_empty()
+            {
+                problems.push(format!(
+                    "device {:04x}:{:04x} requires name, source_id, and source_symbol",
+                    device.vid, device.pid
+                ));
+            }
+            let source_path = Path::new(&device.source_path);
+            if source_path.is_absolute()
+                || !source_path.starts_with(source_root)
+                || source_path
+                    .extension()
+                    .is_none_or(|extension| extension != "swift")
+            {
+                problems.push(format!(
+                    "device '{}': source_path must be a Swift file below the source root",
+                    device.name
+                ));
+            }
+            if device.capability_labels.is_empty() {
+                problems.push(format!(
+                    "device '{}': capability_labels must not be empty",
+                    device.name
+                ));
+            }
+            let unique_labels = device
+                .capability_labels
+                .iter()
+                .map(String::as_str)
+                .collect::<BTreeSet<_>>();
+            if unique_labels.len() != device.capability_labels.len() {
+                problems.push(format!(
+                    "device '{}': capability_labels contains duplicates",
+                    device.name
+                ));
+            }
+        }
+        problems
+    }
+
+    pub fn find_usb(&self, vid: u16, pid: u16) -> Option<&IrazerDevice> {
+        self.devices
+            .iter()
+            .find(|device| device.vid == vid && device.pid == pid)
+    }
+}
+
 fn validate_source(source: &UpstreamSource, problems: &mut Vec<String>) {
     if source.name.trim().is_empty()
         || source.path.trim().is_empty()
@@ -538,6 +687,27 @@ pub enum OpenRgbCatalogError {
         source: toml::de::Error,
     },
     #[error("invalid OpenRGB catalog '{}': {}", path.display(), problems.join("; "))]
+    Validation {
+        path: PathBuf,
+        problems: Vec<String>,
+    },
+}
+
+#[derive(Debug, Error)]
+pub enum IrazerCatalogError {
+    #[error("unable to read '{}': {source}", path.display())]
+    Io {
+        path: PathBuf,
+        #[source]
+        source: io::Error,
+    },
+    #[error("unable to parse '{}': {source}", path.display())]
+    Parse {
+        path: PathBuf,
+        #[source]
+        source: toml::de::Error,
+    },
+    #[error("invalid iRazer catalog '{}': {}", path.display(), problems.join("; "))]
     Validation {
         path: PathBuf,
         problems: Vec<String>,
@@ -637,6 +807,43 @@ zones = ["test_mouse_zone"]
                 name_differences: 1,
                 matrix_differences: 0,
             }
+        );
+    }
+
+    #[test]
+    fn preserves_an_upstream_support_label_as_a_source_claim() {
+        let catalog: IrazerCatalog = toml::from_str(
+            r#"
+schema_version = 1
+
+[source]
+name = "iRazer"
+repository = "owner/irazer"
+commit = "0123456789abcdef0123456789abcdef01234567"
+path = "Sources/iRazer"
+license = "MIT"
+generated_by = "tools/import_irazer.py"
+
+[[devices]]
+source_id = "nommo-v2"
+name = "Razer Nommo V2"
+kind = "speaker"
+vid = 0x1532
+pid = 0x055c
+upstream_support = "supported"
+capability_labels = ["Brightness", "EQ"]
+matrix_family = "extended"
+transaction_id = 0x3f
+source_path = "Sources/iRazer/DeviceCatalog.swift"
+source_symbol = "DeviceCatalog.all:nommo-v2"
+"#,
+        )
+        .unwrap();
+
+        assert!(catalog.validate().is_empty());
+        assert_eq!(
+            catalog.find_usb(0x1532, 0x055c).unwrap().upstream_support,
+            UpstreamSupportClaim::Supported
         );
     }
 }

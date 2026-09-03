@@ -4,7 +4,10 @@ use std::{collections::BTreeMap, env, path::Path};
 
 use razers_device_registry::{
     DeviceKind, Registry,
-    upstream::{OpenRgbCatalog, OpenRgbDevice, UpstreamCatalog, UpstreamDevice, UpstreamFeature},
+    upstream::{
+        IrazerCatalog, IrazerDevice, OpenRgbCatalog, OpenRgbDevice, UpstreamCatalog,
+        UpstreamDevice, UpstreamFeature,
+    },
 };
 use razers_protocol_core::Report90;
 use razers_transport_hidapi::{HidInterfaceSummary, enumerate_razer};
@@ -16,9 +19,9 @@ USAGE:
   razersctl registry validate [DIRECTORY]
   razersctl registry list [DIRECTORY]
   razersctl registry show <DEVICE_ID> [DIRECTORY]
-  razersctl upstream validate [OPENRAZER_CATALOG OPENRGB_CATALOG]
-  razersctl upstream stats [OPENRAZER_CATALOG OPENRGB_CATALOG]
-  razersctl upstream lookup <VID:PID> [OPENRAZER_CATALOG OPENRGB_CATALOG]
+  razersctl upstream validate [OPENRAZER_CATALOG OPENRGB_CATALOG IRAZER_CATALOG]
+  razersctl upstream stats [OPENRAZER_CATALOG OPENRGB_CATALOG IRAZER_CATALOG]
+  razersctl upstream lookup <VID:PID> [OPENRAZER_CATALOG OPENRGB_CATALOG IRAZER_CATALOG]
   razersctl devices [DIRECTORY]
   razersctl report encode <COMMAND_CLASS> <COMMAND_ID> [ARGUMENT_HEX]
   razersctl report decode <REPORT_HEX>
@@ -26,12 +29,13 @@ USAGE:
 
 Numeric command fields accept decimal or 0x-prefixed hexadecimal values.
 Registry commands default to ./devices. This milestone never opens hardware.
-Upstream commands default to the OpenRazer and OpenRGB catalogs under
+Upstream commands default to the OpenRazer, OpenRGB, and iRazer catalogs under
 ./data/upstream. Catalog entries are evidence, not RazeRS support claims.
 "#;
 
 const DEFAULT_OPENRAZER_CATALOG: &str = "data/upstream/openrazer-devices.toml";
 const DEFAULT_OPENRGB_CATALOG: &str = "data/upstream/openrgb-devices.toml";
+const DEFAULT_IRAZER_CATALOG: &str = "data/upstream/irazer-devices.toml";
 
 fn main() {
     if let Err(error) = run(env::args().skip(1).collect()) {
@@ -75,28 +79,40 @@ fn run(args: Vec<String>) -> Result<(), String> {
         [group, command] if group == "upstream" && command == "validate" => upstream_validate(
             Path::new(DEFAULT_OPENRAZER_CATALOG),
             Path::new(DEFAULT_OPENRGB_CATALOG),
+            Path::new(DEFAULT_IRAZER_CATALOG),
         ),
-        [group, command, openrazer, openrgb] if group == "upstream" && command == "validate" => {
-            upstream_validate(Path::new(openrazer), Path::new(openrgb))
+        [group, command, openrazer, openrgb, irazer]
+            if group == "upstream" && command == "validate" =>
+        {
+            upstream_validate(Path::new(openrazer), Path::new(openrgb), Path::new(irazer))
         }
         [group, command] if group == "upstream" && command == "stats" => upstream_stats(
             Path::new(DEFAULT_OPENRAZER_CATALOG),
             Path::new(DEFAULT_OPENRGB_CATALOG),
+            Path::new(DEFAULT_IRAZER_CATALOG),
         ),
-        [group, command, openrazer, openrgb] if group == "upstream" && command == "stats" => {
-            upstream_stats(Path::new(openrazer), Path::new(openrgb))
+        [group, command, openrazer, openrgb, irazer]
+            if group == "upstream" && command == "stats" =>
+        {
+            upstream_stats(Path::new(openrazer), Path::new(openrgb), Path::new(irazer))
         }
         [group, command, identity] if group == "upstream" && command == "lookup" => {
             upstream_lookup(
                 identity,
                 Path::new(DEFAULT_OPENRAZER_CATALOG),
                 Path::new(DEFAULT_OPENRGB_CATALOG),
+                Path::new(DEFAULT_IRAZER_CATALOG),
             )
         }
-        [group, command, identity, openrazer, openrgb]
+        [group, command, identity, openrazer, openrgb, irazer]
             if group == "upstream" && command == "lookup" =>
         {
-            upstream_lookup(identity, Path::new(openrazer), Path::new(openrgb))
+            upstream_lookup(
+                identity,
+                Path::new(openrazer),
+                Path::new(openrgb),
+                Path::new(irazer),
+            )
         }
         [command] if command == "devices" => devices(Path::new("devices")),
         [command, directory] if command == "devices" => devices(Path::new(directory)),
@@ -203,9 +219,18 @@ fn load_openrgb_catalog(path: &Path) -> Result<OpenRgbCatalog, String> {
     OpenRgbCatalog::load_file(path).map_err(|error| error.to_string())
 }
 
-fn upstream_validate(openrazer_path: &Path, openrgb_path: &Path) -> Result<(), String> {
+fn load_irazer_catalog(path: &Path) -> Result<IrazerCatalog, String> {
+    IrazerCatalog::load_file(path).map_err(|error| error.to_string())
+}
+
+fn upstream_validate(
+    openrazer_path: &Path,
+    openrgb_path: &Path,
+    irazer_path: &Path,
+) -> Result<(), String> {
     let openrazer = load_upstream_catalog(openrazer_path)?;
     let openrgb = load_openrgb_catalog(openrgb_path)?;
+    let irazer = load_irazer_catalog(irazer_path)?;
     println!(
         "validated {} evidence-only device identities from {}@{}",
         openrazer.devices.len(),
@@ -218,13 +243,25 @@ fn upstream_validate(openrazer_path: &Path, openrgb_path: &Path) -> Result<(), S
         openrgb.source.repository,
         &openrgb.source.commit[..12]
     );
+    println!(
+        "validated {} evidence-only cross-platform identities from {}@{}",
+        irazer.devices.len(),
+        irazer.source.repository,
+        &irazer.source.commit[..12]
+    );
     print_comparison(&openrazer, &openrgb);
+    print_irazer_comparison(&irazer, &openrgb);
     Ok(())
 }
 
-fn upstream_stats(openrazer_path: &Path, openrgb_path: &Path) -> Result<(), String> {
+fn upstream_stats(
+    openrazer_path: &Path,
+    openrgb_path: &Path,
+    irazer_path: &Path,
+) -> Result<(), String> {
     let catalog = load_upstream_catalog(openrazer_path)?;
     let openrgb = load_openrgb_catalog(openrgb_path)?;
+    let irazer = load_irazer_catalog(irazer_path)?;
     let mut kinds = BTreeMap::new();
     let mut features = BTreeMap::new();
     for device in &catalog.devices {
@@ -269,7 +306,17 @@ fn upstream_stats(openrazer_path: &Path, openrgb_path: &Path) -> Result<(), Stri
             .collect::<Vec<_>>()
             .join(", ")
     );
+    let upstream_supported = irazer
+        .devices
+        .iter()
+        .filter(|device| device.upstream_support.as_str() == "supported")
+        .count();
+    println!(
+        "iRazer devices: {} (upstream-supported={upstream_supported})",
+        irazer.devices.len()
+    );
     print_comparison(&catalog, &openrgb);
+    print_irazer_comparison(&irazer, &openrgb);
     println!("support status: evidence only; hardware verification required");
     Ok(())
 }
@@ -278,15 +325,18 @@ fn upstream_lookup(
     identity: &str,
     openrazer_path: &Path,
     openrgb_path: &Path,
+    irazer_path: &Path,
 ) -> Result<(), String> {
     let (vid, pid) = parse_usb_identity(identity)?;
     let openrazer = load_upstream_catalog(openrazer_path)?;
     let openrgb = load_openrgb_catalog(openrgb_path)?;
+    let irazer = load_irazer_catalog(irazer_path)?;
     let openrazer_device = openrazer.find_usb(vid, pid);
     let openrgb_device = openrgb.find_usb(vid, pid);
-    if openrazer_device.is_none() && openrgb_device.is_none() {
+    let irazer_device = irazer.find_usb(vid, pid);
+    if openrazer_device.is_none() && openrgb_device.is_none() && irazer_device.is_none() {
         return Err(format!(
-            "USB identity {vid:04x}:{pid:04x} is absent from both catalogs"
+            "USB identity {vid:04x}:{pid:04x} is absent from all catalogs"
         ));
     }
     if let Some(device) = openrazer_device {
@@ -300,6 +350,13 @@ fn upstream_lookup(
         println!("[OpenRGB]");
         print_openrgb_device(device, &openrgb);
     }
+    if let Some(device) = irazer_device {
+        if openrazer_device.is_some() || openrgb_device.is_some() {
+            println!();
+        }
+        println!("[iRazer]");
+        print_irazer_device(device, &irazer);
+    }
     Ok(())
 }
 
@@ -312,6 +369,43 @@ fn print_comparison(openrazer: &UpstreamCatalog, openrgb: &OpenRgbCatalog) {
         comparison.openrgb_only,
         comparison.name_differences,
         comparison.matrix_differences
+    );
+}
+
+fn print_irazer_comparison(irazer: &IrazerCatalog, openrgb: &OpenRgbCatalog) {
+    let irazer_identities = irazer
+        .devices
+        .iter()
+        .map(|device| ((device.vid, device.pid), device))
+        .collect::<BTreeMap<_, _>>();
+    let openrgb_identities = openrgb
+        .devices
+        .iter()
+        .map(|device| ((device.vid, device.pid), device))
+        .collect::<BTreeMap<_, _>>();
+    let overlap = irazer_identities
+        .keys()
+        .filter(|identity| openrgb_identities.contains_key(identity))
+        .count();
+    let protocol_differences = irazer_identities
+        .iter()
+        .filter_map(|(identity, irazer_device)| {
+            openrgb_identities
+                .get(identity)
+                .map(|openrgb_device| (*irazer_device, *openrgb_device))
+        })
+        .filter(|(irazer_device, openrgb_device)| {
+            irazer_device.matrix_family != openrgb_device.matrix_family
+                || irazer_device.transaction_id != openrgb_device.transaction_id
+        })
+        .count();
+
+    println!(
+        "iRazer/OpenRGB: overlap={}, iRazer-only={}, OpenRGB-only={}, protocol-differences={}",
+        overlap,
+        irazer_identities.len() - overlap,
+        openrgb_identities.len() - overlap,
+        protocol_differences
     );
 }
 
@@ -375,6 +469,28 @@ fn print_openrgb_device(device: &OpenRgbDevice, catalog: &OpenRgbCatalog) {
     println!("support status: evidence only; hardware verification required");
 }
 
+fn print_irazer_device(device: &IrazerDevice, catalog: &IrazerCatalog) {
+    println!("name: {}", device.name);
+    println!("kind: {}", device.kind.as_str());
+    println!("usb: {:04x}:{:04x}", device.vid, device.pid);
+    println!("source id: {}", device.source_id);
+    println!(
+        "upstream support claim: {}",
+        device.upstream_support.as_str()
+    );
+    println!("capability labels: {}", device.capability_labels.join(", "));
+    println!("matrix family: {}", device.matrix_family.as_str());
+    println!("transaction id: 0x{:02x}", device.transaction_id);
+    println!(
+        "evidence: {}/{}@{}:{}",
+        catalog.source.repository,
+        device.source_path,
+        &catalog.source.commit[..12],
+        device.source_symbol
+    );
+    println!("RazeRS support status: evidence only; hardware verification required");
+}
+
 fn feature_names(features: &[UpstreamFeature]) -> String {
     features
         .iter()
@@ -395,6 +511,11 @@ fn devices(directory: &Path) -> Result<(), String> {
         .is_file()
         .then(|| load_openrgb_catalog(openrgb_path))
         .transpose()?;
+    let irazer_path = Path::new(DEFAULT_IRAZER_CATALOG);
+    let irazer = irazer_path
+        .is_file()
+        .then(|| load_irazer_catalog(irazer_path))
+        .transpose()?;
     let interfaces = enumerate_razer().map_err(|error| error.to_string())?;
     if interfaces.is_empty() {
         println!("no Razer HID interfaces detected");
@@ -402,7 +523,13 @@ fn devices(directory: &Path) -> Result<(), String> {
     }
 
     for interface in interfaces {
-        print_interface(&registry, openrazer.as_ref(), openrgb.as_ref(), &interface);
+        print_interface(
+            &registry,
+            openrazer.as_ref(),
+            openrgb.as_ref(),
+            irazer.as_ref(),
+            &interface,
+        );
     }
     Ok(())
 }
@@ -411,6 +538,7 @@ fn print_interface(
     registry: &Registry,
     openrazer: Option<&UpstreamCatalog>,
     openrgb: Option<&OpenRgbCatalog>,
+    irazer: Option<&IrazerCatalog>,
     interface: &HidInterfaceSummary,
 ) {
     let matches = registry
@@ -441,9 +569,13 @@ fn print_interface(
         .and_then(|catalog| catalog.find_usb(interface.vendor_id, interface.product_id))
         .map(|device| device.name.as_str())
         .unwrap_or("unknown");
+    let irazer_match = irazer
+        .and_then(|catalog| catalog.find_usb(interface.vendor_id, interface.product_id))
+        .map(|device| device.name.as_str())
+        .unwrap_or("unknown");
 
     println!(
-        "{:04x}:{:04x}\tinterface={}\tusage={:04x}:{:04x}\tproduct={}\tserial={}\tregistry={}\topenrazer={}\topenrgb={}",
+        "{:04x}:{:04x}\tinterface={}\tusage={:04x}:{:04x}\tproduct={}\tserial={}\tregistry={}\topenrazer={}\topenrgb={}\tirazer={}",
         interface.vendor_id,
         interface.product_id,
         interface.interface_number,
@@ -457,7 +589,8 @@ fn print_interface(
         },
         registry_match,
         openrazer_match,
-        openrgb_match
+        openrgb_match,
+        irazer_match
     );
 }
 
