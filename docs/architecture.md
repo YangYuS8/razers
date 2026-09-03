@@ -82,6 +82,7 @@ The completed Milestone 0 foundation and the first read-only Milestone 1 slice c
 ```text
 razers-types
 razers-protocol-core
+razers-protocol-razer90
 razers-transport
 razers-transport-hidapi
 razers-device-registry

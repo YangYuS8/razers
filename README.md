@@ -34,6 +34,7 @@ their respective owners.
 | --- | --- |
 | `razers-types` | Shared identifiers, support states, and command risk levels |
 | `razers-protocol-core` | Safe 90-byte report encoding, decoding, and CRC validation |
+| `razers-protocol-razer90` | Timed request-response exchange, validation, and explicit busy policy |
 | `razers-transport` | OS-independent report I/O trait and deterministic replay transport |
 | `razers-transport-hidapi` | Cross-platform, descriptor-only HID enumeration |
 | `razers-device-registry` | TOML device schema, loading, and validation |
@@ -85,6 +86,7 @@ Milestone 0 is complete, and descriptor-only enumeration begins Milestone 1:
 - [x] Rust workspace and architectural boundaries
 - [x] Explicit 90-byte report codec and checksum tests
 - [x] Replay transport for hardware-free tests
+- [x] Policy-driven 90-byte exchange with status, echo, and optional transaction checks
 - [x] Device registry schema v1 and validation
 - [x] Developer CLI for registry and packet inspection
 - [x] CI, safety policy, contribution guide, and source provenance

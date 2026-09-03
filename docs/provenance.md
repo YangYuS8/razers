@@ -42,6 +42,28 @@ OpenRazer is licensed GPL-2.0-or-later. RazeRS is also GPL-2.0-or-later and reta
 file-level SPDX identifiers. This project currently contains a new Rust implementation
 of the documented wire format, not a line-by-line translation of an upstream driver.
 
+### Classic request-response behavior
+
+The validated exchange layer follows the status values and response matching fields
+in OpenRazer's
+[`razercommon.h`](https://github.com/openrazer/openrazer/blob/6820f9da169d354bc7e6e93a0aa8683a6bb75792/driver/razercommon.h)
+and the request loop in
+[`razermouse_driver.c`](https://github.com/openrazer/openrazer/blob/6820f9da169d354bc7e6e93a0aa8683a6bb75792/driver/razermouse_driver.c#L115-L177).
+OpenRazer accepts a valid `BUSY` response because some devices complete the command
+despite that status. The independent Windows project opsrzr, at commit
+`f4e9eabca19f721cf1bcb6ee8097d0748367cfe7`, instead
+[`retries BUSY responses`](https://github.com/atv57/opsrzr/blob/f4e9eabca19f721cf1bcb6ee8097d0748367cfe7/crates/razer-hid/src/transport.rs#L164-L211).
+
+RazeRS preserves that disagreement as an explicit per-connection `BusyHandling`
+policy. Accepting busy is the conservative default because resending a write may
+repeat a persistent operation; retrying must be opted into for a device and command
+known to be safe. All retry, short-read, status, command-echo, transaction-ID, and
+packet-counter paths are tested against the in-memory replay transport.
+
+The relevant opsrzr crate is GPL-2.0-only, so its implementation is not copied or
+relicensed here. RazeRS's new implementation remains GPL-2.0-or-later; opsrzr is used
+only to corroborate the existence of the alternative behavior.
+
 ## Evidence versus verification
 
 An upstream implementation is evidence that a protocol fact or device identity is

@@ -1,0 +1,14 @@
+[package]
+name = "razers-protocol-razer90"
+description = "Validated request-response exchanges for classic Razer 90-byte reports"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+razers-protocol-core.workspace = true
+razers-transport.workspace = true
+thiserror.workspace = true

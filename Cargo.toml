@@ -4,6 +4,7 @@ members = [
     "crates/razers-cli",
     "crates/razers-device-registry",
     "crates/razers-protocol-core",
+    "crates/razers-protocol-razer90",
     "crates/razers-transport",
     "crates/razers-transport-hidapi",
     "crates/razers-types",
@@ -24,6 +25,7 @@ toml = "1.1.5"
 hidapi = "2.6.7"
 razers-device-registry = { path = "crates/razers-device-registry" }
 razers-protocol-core = { path = "crates/razers-protocol-core" }
+razers-protocol-razer90 = { path = "crates/razers-protocol-razer90" }
 razers-transport = { path = "crates/razers-transport" }
 razers-transport-hidapi = { path = "crates/razers-transport-hidapi" }
 razers-types = { path = "crates/razers-types" }
