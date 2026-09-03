@@ -126,8 +126,8 @@ jobs:
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           key: release-${{ matrix.target }}
-      - name: Build desktop app and developer CLI
-        run: cargo build --locked --release --package razers-app --package razers-cli --target ${{ matrix.target }}
+      - name: Build desktop app, local Agent, and developer CLI
+        run: cargo build --locked --release --package razers-agent --package razers-app --package razers-cli --target ${{ matrix.target }}
       - name: Package binary and checksum
         env:
           RELEASE_TAG: ${{ needs.automate.outputs.tag }}

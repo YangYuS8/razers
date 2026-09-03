@@ -24,7 +24,11 @@ FIXED_ZIP_TIME = (1980, 1, 1, 0, 0, 0)
 def binary_paths(target: str) -> list[Path]:
     suffix = ".exe" if "windows" in target else ""
     directory = Path("target") / target / "release"
-    return [directory / f"razers{suffix}", directory / f"razersctl{suffix}"]
+    return [
+        directory / f"razers{suffix}",
+        directory / f"razers-agent{suffix}",
+        directory / f"razersctl{suffix}",
+    ]
 
 
 def copy_payload(staging: Path, binaries: list[Path]) -> None:

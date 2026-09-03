@@ -50,8 +50,9 @@ buying every model.
 
 ## Current boundary
 
-The first application slice is intentionally read-only. It discovers Razer HID
-descriptors, groups interfaces by USB product identity, displays curated or imported
-knowledge, and explains why controls are still locked. It never opens a device,
-reads a serial-number value, sends a report, requires an account, or performs a
-network request.
+The first application slice is intentionally read-only. A private Agent child
+discovers Razer HID descriptors, groups interfaces by USB product identity, and
+returns display-ready summaries over inherited pipes. The desktop process displays
+curated or imported knowledge and explains why controls are still locked. Neither
+process opens a device, reads a serial-number value, sends a report, requires an
+account, or performs a network request.

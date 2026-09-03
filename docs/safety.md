@@ -56,7 +56,7 @@ collect or transmit device data by default.
 
 ## Current milestone guarantee
 
-The current code can enumerate HID descriptors but does not open devices or write to
-real hardware. Device paths and serial-number values are omitted from enumeration
-results. `ReplayTransport` remains the only report I/O implementation supplied by the
-workspace.
+The current Agent can enumerate HID descriptors but does not open devices or write
+to real hardware. Device paths and serial-number values are omitted before data
+crosses the IPC boundary. `ReplayTransport` remains the only report I/O
+implementation supplied by the workspace.

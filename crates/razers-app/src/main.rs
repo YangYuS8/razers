@@ -5,12 +5,37 @@ use eframe::egui::{
     self, Align, Color32, CornerRadius, FontId, Frame, Layout, Margin, RichText, Stroke,
     ViewportBuilder,
 };
-use razers_app::{DeviceSummary, DiscoverySnapshot, discover};
+use razers_app::discover_via_agent;
+use razers_ipc::{DeviceList, DeviceSummary};
 
 const ACCENT: Color32 = Color32::from_rgb(68, 214, 116);
 const ACCENT_DARK: Color32 = Color32::from_rgb(19, 105, 52);
 
-fn main() -> eframe::Result {
+fn main() {
+    let arguments = std::env::args().skip(1).collect::<Vec<_>>();
+    match arguments.as_slice() {
+        [] => {
+            if let Err(error) = run_gui() {
+                eprintln!("error: {error}");
+                std::process::exit(1);
+            }
+        }
+        [argument] if argument == "--agent-stdio" => {
+            if let Err(error) =
+                razers_agent::serve_stdio(std::io::stdin().lock(), std::io::stdout().lock())
+            {
+                eprintln!("error: {error}");
+                std::process::exit(1);
+            }
+        }
+        _ => {
+            eprintln!("error: unsupported RazeRS desktop argument");
+            std::process::exit(2);
+        }
+    }
+}
+
+fn run_gui() -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: ViewportBuilder::default()
             .with_app_id("io.github.yangyus8.razers")
@@ -27,7 +52,7 @@ fn main() -> eframe::Result {
 }
 
 struct RazersApp {
-    discovery: Result<DiscoverySnapshot, String>,
+    discovery: Result<DeviceList, String>,
 }
 
 impl RazersApp {
@@ -37,12 +62,12 @@ impl RazersApp {
         style.spacing.button_padding = egui::vec2(14.0, 8.0);
         context.egui_ctx.set_style(style);
         Self {
-            discovery: discover(),
+            discovery: discover_via_agent(),
         }
     }
 
     fn refresh(&mut self) {
-        self.discovery = discover();
+        self.discovery = discover_via_agent();
     }
 }
 
@@ -202,7 +227,7 @@ fn device_card(ui: &mut egui::Ui, device: &DeviceSummary) {
                 );
             });
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                status_badge(ui, device.support_label);
+                status_badge(ui, &device.support_label);
             });
         });
 
