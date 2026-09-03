@@ -22,5 +22,3 @@
 ### Miscellaneous Chores
 
 * bootstrap v0.1.0 ([b440e62](https://github.com/YangYuS8/razers/commit/b440e62568a0f8ad5df9b5a38e3acb35b642b7fa))
-
-## Changelog
