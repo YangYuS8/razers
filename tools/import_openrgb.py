@@ -1,0 +1,205 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+"""Generate RazeRS's evidence-only lighting catalog from a pinned OpenRGB tree."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import subprocess
+from dataclasses import dataclass
+from pathlib import Path
+
+
+SCHEMA_VERSION = 1
+SOURCE_REPOSITORY = "CalcProgrammer1/OpenRGB"
+SOURCE_COMMIT = "7fed68ccf1a2413b9bd38a70e266b12cb2d59c26"
+SOURCE_LICENSE = "GPL-2.0-or-later"
+SOURCE_ROOT = Path("Controllers/RazerController")
+HEADER_PATH = SOURCE_ROOT / "RazerDevices.h"
+DEVICE_PATH = SOURCE_ROOT / "RazerDevices.cpp"
+
+PID_PATTERN = re.compile(
+    r"^#define\s+(RAZER_[A-Z0-9_]+_PID)\s+(0x[0-9A-Fa-f]+)", re.MULTILINE
+)
+DEVICE_PATTERN = re.compile(
+    r"static const razer_device\s+(\w+)\s*=\s*\{\s*"
+    r'"([^"]+)",\s*'
+    r"(RAZER_[A-Z0-9_]+_PID),\s*"
+    r"(DEVICE_TYPE_[A-Z0-9_]+),\s*"
+    r"(RAZER_MATRIX_TYPE_[A-Z0-9_]+),\s*"
+    r"(0x[0-9A-Fa-f]+|\d+),\s*"
+    r"(\d+),\s*(\d+),\s*"
+    r"\{(.*?)\}\s*,\s*"
+    r"(&?[A-Za-z0-9_]+|NULL)(?:\s*//[^\n]*)?\s*\};",
+    re.DOTALL,
+)
+
+
+@dataclass(frozen=True)
+class Device:
+    name: str
+    kind: str
+    vid: int
+    pid: int
+    pid_symbol: str
+    source_symbol: str
+    matrix_family: str
+    transaction_id: int
+    matrix: tuple[int, int]
+    zones: tuple[str, ...]
+    layout: str | None
+
+
+def verify_source(source: Path) -> None:
+    result = subprocess.run(
+        ["git", "-C", str(source), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    actual_commit = result.stdout.strip()
+    if actual_commit != SOURCE_COMMIT:
+        raise SystemExit(
+            f"OpenRGB checkout is at {actual_commit}; expected pinned commit {SOURCE_COMMIT}"
+        )
+
+
+def normalize_kind(value: str) -> str:
+    kind = value.removeprefix("DEVICE_TYPE_").lower()
+    return {
+        "headset_stand": "headset-stand",
+        "ledstrip": "led-strip",
+        "mousemat": "mouse-mat",
+    }.get(kind, kind.replace("_", "-"))
+
+
+def normalize_matrix(value: str) -> str:
+    return value.removeprefix("RAZER_MATRIX_TYPE_").lower().replace("_", "-")
+
+
+def load_devices(source: Path) -> list[Device]:
+    header_path = source / HEADER_PATH
+    device_path = source / DEVICE_PATH
+    if not header_path.is_file() or not device_path.is_file():
+        raise SystemExit(f"OpenRGB Razer device table not found below {source}")
+
+    header = header_path.read_text(encoding="utf-8")
+    implementation = device_path.read_text(encoding="utf-8")
+    pids = {name: int(value, 16) for name, value in PID_PATTERN.findall(header)}
+
+    devices = []
+    parsed_symbols = set()
+    for match in DEVICE_PATTERN.finditer(implementation):
+        (
+            source_symbol,
+            name,
+            pid_symbol,
+            raw_kind,
+            raw_matrix,
+            raw_transaction_id,
+            raw_rows,
+            raw_columns,
+            raw_zones,
+            raw_layout,
+        ) = match.groups()
+        if pid_symbol not in pids:
+            raise SystemExit(f"{source_symbol} references unknown PID symbol {pid_symbol}")
+        parsed_symbols.add(source_symbol)
+        zones = tuple(re.findall(r"&([A-Za-z0-9_]+)", raw_zones))
+        layout = raw_layout.removeprefix("&") if raw_layout != "NULL" else None
+        devices.append(
+            Device(
+                name=name,
+                kind=normalize_kind(raw_kind),
+                vid=0x1532,
+                pid=pids[pid_symbol],
+                pid_symbol=pid_symbol,
+                source_symbol=source_symbol,
+                matrix_family=normalize_matrix(raw_matrix),
+                transaction_id=int(raw_transaction_id, 0),
+                matrix=(int(raw_rows), int(raw_columns)),
+                zones=zones,
+                layout=layout,
+            )
+        )
+
+    device_list = implementation[implementation.find("razer_device_list") :]
+    listed_symbols = set(re.findall(r"&(\w+_device)", device_list))
+    if parsed_symbols != listed_symbols:
+        missing = sorted(listed_symbols - parsed_symbols)
+        extra = sorted(parsed_symbols - listed_symbols)
+        raise SystemExit(f"device table mismatch; missing={missing}, extra={extra}")
+
+    devices.sort(key=lambda device: (device.kind, device.name.casefold(), device.pid))
+    identities = [(device.vid, device.pid) for device in devices]
+    if len(identities) != len(set(identities)):
+        raise SystemExit("OpenRGB source contains duplicate VID/PID identities")
+    return devices
+
+
+def toml_string(value: str) -> str:
+    return json.dumps(value, ensure_ascii=False)
+
+
+def toml_strings(values: tuple[str, ...]) -> str:
+    return "[" + ", ".join(toml_string(value) for value in values) + "]"
+
+
+def render(devices: list[Device]) -> str:
+    lines = [
+        "# SPDX-License-Identifier: GPL-2.0-or-later",
+        "# Generated by tools/import_openrgb.py; do not edit by hand.",
+        "# This is upstream evidence, not a RazeRS hardware-support claim.",
+        f"schema_version = {SCHEMA_VERSION}",
+        "",
+        "[source]",
+        'name = "OpenRGB"',
+        f"repository = {toml_string(SOURCE_REPOSITORY)}",
+        f"commit = {toml_string(SOURCE_COMMIT)}",
+        f"path = {toml_string(str(SOURCE_ROOT))}",
+        f"license = {toml_string(SOURCE_LICENSE)}",
+        'generated_by = "tools/import_openrgb.py"',
+    ]
+
+    for device in devices:
+        lines.extend(
+            [
+                "",
+                "[[devices]]",
+                f"name = {toml_string(device.name)}",
+                f"kind = {toml_string(device.kind)}",
+                f"vid = 0x{device.vid:04x}",
+                f"pid = 0x{device.pid:04x}",
+                f"pid_symbol = {toml_string(device.pid_symbol)}",
+                f"source_path = {toml_string(str(DEVICE_PATH))}",
+                f"source_symbol = {toml_string(device.source_symbol)}",
+                f"matrix_family = {toml_string(device.matrix_family)}",
+                f"transaction_id = 0x{device.transaction_id:02x}",
+                f"matrix = [{device.matrix[0]}, {device.matrix[1]}]",
+                f"zones = {toml_strings(device.zones)}",
+            ]
+        )
+        if device.layout is not None:
+            lines.append(f"layout = {toml_string(device.layout)}")
+
+    return "\n".join(lines) + "\n"
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--source", type=Path, required=True, help="OpenRGB checkout")
+    parser.add_argument("--output", type=Path, required=True, help="catalog output path")
+    args = parser.parse_args()
+
+    verify_source(args.source)
+    devices = load_devices(args.source)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(render(devices), encoding="utf-8")
+    print(f"imported {len(devices)} OpenRGB lighting identities into {args.output}")
+
+
+if __name__ == "__main__":
+    main()

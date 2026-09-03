@@ -18,18 +18,24 @@ commit. Do not copy code from an incompatible license.
 
 ## Upstream data import
 
-`data/upstream/openrazer-devices.toml` is generated from the exact OpenRazer commit
-recorded in `tools/import_openrazer.py`. It preserves USB identities, class symbols,
-advertised methods, matrix dimensions, DPI limits, polling rates, and derived feature
-hints. Regenerate it from a checkout at that commit with:
+The catalogs under `data/upstream` are generated from the exact source commits
+recorded in their importers. The OpenRazer catalog preserves USB identities, class
+symbols, advertised methods, matrix dimensions, DPI limits, polling rates, and
+derived feature hints. The OpenRGB catalog adds lighting matrix families,
+transaction IDs, dimensions, zone symbols, and keyboard layout symbols.
+
+Regenerate them from checkouts at their pinned commits with:
 
 ```bash
 python3 tools/import_openrazer.py \
   --source /path/to/openrazer \
   --output data/upstream/openrazer-devices.toml
+python3 tools/import_openrgb.py \
+  --source /path/to/OpenRGB \
+  --output data/upstream/openrgb-devices.toml
 ```
 
-Do not edit the generated catalog by hand. Updating the pinned commit requires a
+Do not edit generated catalogs by hand. Updating a pinned commit requires a
 review of source licensing, importer output, and semantic changes. Imported facts
 remain evidence-only until a curated manifest and hardware verification establish
 RazeRS support.

@@ -4,9 +4,10 @@ Device manifests live in `devices/*.toml`. One file describes one product, while
 `connections` array describes the physical links that can expose that product.
 
 These curated manifests are intentionally distinct from the generated, evidence-only
-OpenRazer catalog in `data/upstream/openrazer-devices.toml`. Upstream data can seed a
-manifest, but it does not establish a safe interface match, protocol selection, or
-working RazeRS capability.
+catalogs in `data/upstream`. Upstream data can seed a manifest, but it does not
+establish a safe interface match, protocol selection, or working RazeRS capability.
+When sources disagree, keep the conflict visible until device-specific evidence
+resolves it.
 
 The registry parser rejects unknown fields, duplicate identifiers, invalid ranges,
 unpinned evidence, and claims of verified support without a verification record.

@@ -11,7 +11,7 @@ and verified without building a device-specific UI for every product.
 > [!WARNING]
 > RazeRS is pre-alpha software. It does not send commands to real hardware yet.
 > The current release contains protocol codecs, replayable transport tests, a
-> versioned device registry, a pinned OpenRazer evidence catalog,
+> versioned device registry, pinned OpenRazer and OpenRGB evidence catalogs,
 > privacy-preserving HID enumeration, and developer CLI tools.
 
 RazeRS is an independent community project. It is not affiliated with, endorsed
@@ -89,7 +89,8 @@ Milestone 0 is complete, and descriptor-only enumeration begins Milestone 1:
 - [x] Developer CLI for registry and packet inspection
 - [x] CI, safety policy, contribution guide, and source provenance
 - [x] Cross-platform HID enumeration without opening devices
-- [x] Reproducible import of 267 OpenRazer device identities and feature hints
+- [x] Reproducible import of 267 OpenRazer identities and 196 OpenRGB lighting records
+- [x] Cross-source comparison without silently resolving conflicting facts
 - [ ] Safe, read-only identification of the first physical device
 - [ ] Agent and versioned local IPC
 - [ ] Capability-driven desktop UI
@@ -97,8 +98,8 @@ Milestone 0 is complete, and descriptor-only enumeration begins Milestone 1:
 ## Source provenance and licensing
 
 Protocol facts and device metadata are traced to pinned upstream sources. The
-generated OpenRazer catalog is evidence-only: an entry does not claim that RazeRS
-can control or has tested that device.
+generated OpenRazer and OpenRGB catalogs are evidence-only: an entry does not claim
+that RazeRS can control or has tested that device.
 See [`docs/provenance.md`](docs/provenance.md) and the `evidence` entries in each
 device manifest. Code in this repository is licensed under
 GPL-2.0-or-later; see [`LICENSE`](LICENSE).

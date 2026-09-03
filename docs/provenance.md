@@ -52,3 +52,25 @@ on a recorded operating-system and firmware combination.
 The generated catalog therefore stays separate from curated `devices/*.toml`
 manifests. It can name an attached device and guide implementation, but it cannot
 select a protocol driver or authorize hardware writes.
+
+## OpenRGB lighting catalog
+
+Lighting metadata is imported from OpenRGB commit:
+
+```text
+7fed68ccf1a2413b9bd38a70e266b12cb2d59c26
+```
+
+[`data/upstream/openrgb-devices.toml`](../data/upstream/openrgb-devices.toml)
+contains the 196 entries referenced by OpenRGB's Razer device table. The importer
+preserves the matrix protocol family, transaction ID, matrix dimensions, zone
+symbols, PID symbol, and optional keyboard layout symbol from
+[`RazerDevices.h`](https://github.com/CalcProgrammer1/OpenRGB/blob/7fed68ccf1a2413b9bd38a70e266b12cb2d59c26/Controllers/RazerController/RazerDevices.h)
+and
+[`RazerDevices.cpp`](https://github.com/CalcProgrammer1/OpenRGB/blob/7fed68ccf1a2413b9bd38a70e266b12cb2d59c26/Controllers/RazerController/RazerDevices.cpp).
+Those files are GPL-2.0-or-later.
+
+The two catalogs overlap on 172 USB identities. They currently contain 72 naming
+differences and 18 matrix-dimension differences. RazeRS reports these disagreements
+instead of choosing one source automatically; a curated manifest must resolve them
+with device-specific evidence.
