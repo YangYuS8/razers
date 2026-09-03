@@ -38,6 +38,8 @@ their respective owners.
 | --- | --- |
 | `razers-types` | Shared identifiers, support states, and command risk levels |
 | `razers-app` | Cross-platform, user-facing desktop application |
+| `razers-agent` | Private local device service and descriptor discovery |
+| `razers-ipc` | Versioned JSON-RPC messages shared by the Agent and clients |
 | `razers-protocol-core` | Safe 90-byte report encoding, decoding, and CRC validation |
 | `razers-protocol-razer90` | Timed request-response exchange, validation, and explicit busy policy |
 | `razers-transport` | OS-independent report I/O trait and deterministic replay transport |
@@ -49,6 +51,7 @@ The architectural boundaries and roadmap are documented in
 [`docs/architecture.md`](docs/architecture.md).
 Release automation and dependency policy are documented in
 [`docs/releases.md`](docs/releases.md).
+The current local wire contract is documented in [`docs/ipc.md`](docs/ipc.md).
 
 ## Quick start
 
@@ -111,8 +114,8 @@ Milestone 0 is complete, and descriptor-only enumeration begins Milestone 1:
 - [x] Cross-source comparison without silently resolving conflicting facts
 - [x] Field-level evidence assessment, candidate shortlist, and conflict queue
 - [x] Read-only desktop device overview with explicit privacy and support states
+- [x] Private child Agent and versioned local JSON-RPC boundary
 - [ ] Safe, read-only identification of the first physical device
-- [ ] Agent and versioned local IPC
 - [ ] Capability-driven desktop UI
 
 ## Source provenance and licensing

@@ -10,7 +10,7 @@ power management, equalizers, and eventually input actions.
 ```text
 Desktop UI / CLI / SDK
           |
-          | versioned local IPC (future milestone)
+          | versioned local IPC
           v
         Agent
   device manager, profiles, state cache, diagnostics
@@ -91,24 +91,35 @@ razers-protocol-razer90
 razers-transport
 razers-transport-hidapi
 razers-device-registry
+razers-ipc
+razers-agent
 razers-app
 razers-cli
 ```
 
-The desktop application currently consumes the same privacy-preserving descriptor
-summaries, curated manifests, and reconciled evidence as the CLI. Catalogs and
-manifests are embedded at build time so release binaries do not depend on a working
-directory or download device data at runtime. It exposes no control until a typed
-driver and the Agent boundary exist.
+The Agent owns HID enumeration, curated manifests, reconciled evidence, and the
+user-facing device summaries. The desktop application requests those summaries over
+the versioned IPC boundary; it does not enumerate HID itself. Catalogs and manifests
+are embedded at build time so release binaries do not depend on a working directory
+or download device data at runtime. The Agent exposes no control until a typed,
+replay-tested driver exists.
 
 Expected later boundaries include protocol-family crates, platform transport crates,
-an Agent core and executable, versioned IPC, profiles, actions, diagnostics, and a
-capability-driven desktop application. New crates should be introduced when a real
-boundary is exercised, not only to mirror a future directory diagram.
+profiles, actions, diagnostics, and capability-driven controls. New crates should be
+introduced when a real boundary is exercised, not only to mirror a future directory
+diagram.
 
 ## Local IPC direction
 
-The Agent will use a versioned local protocol: Unix domain sockets on Linux/macOS and
-named pipes on Windows. JSON-RPC is the preferred initial encoding because it is easy
-to inspect and supports third-party clients. IPC must be restricted to the current
-user and must not expose raw hardware writes in normal builds.
+The first transport launches an Agent child with inherited standard-input and
+standard-output pipes. There is no listening socket, port, or cross-user endpoint.
+Messages use newline-delimited JSON-RPC 2.0 with an independent RazeRS protocol
+version. The release archive places `razers-agent` beside the desktop executable; a
+hidden self-hosted child mode keeps development builds usable when that sibling has
+not been built yet.
+
+A future persistent Agent may use a current-user Unix domain socket on Linux/macOS
+and a current-user named pipe on Windows, but only after its ownership, permissions,
+peer authentication, and lifecycle are implemented and tested. Normal IPC must never
+expose arbitrary raw hardware writes. See [`ipc.md`](ipc.md) for the current wire
+contract.

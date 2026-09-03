@@ -1,391 +1,184 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-//! User-facing, read-only application model.
-//!
-//! The model deliberately consumes privacy-preserving HID summaries and never
-//! receives device paths or serial-number values.
+//! Private child-process IPC client used by the RazeRS desktop application.
 
-use std::collections::BTreeMap;
-
-use razers_device_registry::{
-    DeviceDescriptor, parse_manifest,
-    upstream::{
-        EvidenceAgreement, EvidenceAssessment, EvidenceReadiness, IrazerCatalog, OpenRgbCatalog,
-        UpstreamCatalog, UpstreamFeature, assess_evidence,
-    },
+use std::{
+    env,
+    ffi::OsString,
+    io::Write,
+    path::{Path, PathBuf},
+    process::{Command, Stdio},
 };
-use razers_transport_hidapi::{HidInterfaceSummary, enumerate_razer};
-use razers_types::SupportStatus;
 
-const OPENRAZER_CATALOG: &str = include_str!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/upstream/openrazer-devices.toml"
-));
-const OPENRGB_CATALOG: &str = include_str!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/upstream/openrgb-devices.toml"
-));
-const IRAZER_CATALOG: &str = include_str!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../data/upstream/irazer-devices.toml"
-));
-const DEVICE_MANIFESTS: &[(&str, &str)] =
-    include!(concat!(env!("OUT_DIR"), "/embedded_devices.rs"));
+use razers_ipc::{
+    DeviceList, JSON_RPC_VERSION, METHOD_DEVICES_LIST, PROTOCOL_VERSION, Request, Response,
+    ResponseResult,
+};
+use serde_json::json;
 
-/// A complete result from one descriptor-only discovery pass.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct DiscoverySnapshot {
-    pub devices: Vec<DeviceSummary>,
-    pub interface_count: usize,
+/// Ask a private Agent child process for the current descriptor-only device list.
+pub fn discover_via_agent() -> Result<DeviceList, String> {
+    let current_executable = env::current_exe()
+        .map_err(|error| format!("unable to locate the RazeRS executable: {error}"))?;
+    let (program, arguments) = agent_command(&current_executable);
+    request_devices(program, &arguments)
 }
 
-/// User-facing information about one detected USB product identity.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct DeviceSummary {
-    pub display_name: String,
-    pub vid: u16,
-    pub pid: u16,
-    pub interface_count: usize,
-    pub vendor_interface_count: usize,
-    pub support_label: &'static str,
-    pub support_detail: String,
-    pub capabilities: Vec<&'static str>,
-    pub evidence_label: String,
-    pub control_available: bool,
-}
-
-impl DeviceSummary {
-    pub fn usb_identity(&self) -> String {
-        format!("{:04X}:{:04X}", self.vid, self.pid)
-    }
-}
-
-/// Enumerate connected Razer interfaces without opening hardware.
-pub fn discover() -> Result<DiscoverySnapshot, String> {
-    let knowledge = EmbeddedKnowledge::load()?;
-    let interfaces = enumerate_razer().map_err(|error| error.to_string())?;
-    Ok(knowledge.summarize(&interfaces))
-}
-
-struct EmbeddedKnowledge {
-    manifests: Vec<DeviceDescriptor>,
-    openrazer: UpstreamCatalog,
-    openrgb: OpenRgbCatalog,
-    irazer: IrazerCatalog,
-    assessments: BTreeMap<(u16, u16), EvidenceAssessment>,
-}
-
-impl EmbeddedKnowledge {
-    fn load() -> Result<Self, String> {
-        let openrazer: UpstreamCatalog = parse_catalog("OpenRazer", OPENRAZER_CATALOG)?;
-        let openrgb: OpenRgbCatalog = parse_catalog("OpenRGB", OPENRGB_CATALOG)?;
-        let irazer: IrazerCatalog = parse_catalog("iRazer", IRAZER_CATALOG)?;
-        validate_catalog("OpenRazer", openrazer.validate())?;
-        validate_catalog("OpenRGB", openrgb.validate())?;
-        validate_catalog("iRazer", irazer.validate())?;
-        let manifests = DEVICE_MANIFESTS
-            .iter()
-            .map(|(name, source)| {
-                parse_manifest(source, format!("embedded/{name}"))
-                    .map_err(|error| format!("unable to load embedded device data: {error}"))
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        let assessments = assess_evidence(&openrazer, &openrgb, &irazer)
-            .into_iter()
-            .map(|assessment| ((assessment.vid, assessment.pid), assessment))
-            .collect();
-
-        Ok(Self {
-            manifests,
-            openrazer,
-            openrgb,
-            irazer,
-            assessments,
-        })
-    }
-
-    fn summarize(&self, interfaces: &[HidInterfaceSummary]) -> DiscoverySnapshot {
-        let grouped = interfaces.iter().fold(
-            BTreeMap::<(u16, u16), Vec<&HidInterfaceSummary>>::new(),
-            |mut groups, interface| {
-                groups
-                    .entry((interface.vendor_id, interface.product_id))
-                    .or_default()
-                    .push(interface);
-                groups
-            },
-        );
-        let devices = grouped
-            .into_iter()
-            .map(|((vid, pid), interfaces)| self.summarize_device(vid, pid, &interfaces))
-            .collect();
-
-        DiscoverySnapshot {
-            devices,
-            interface_count: interfaces.len(),
-        }
-    }
-
-    fn summarize_device(
-        &self,
-        vid: u16,
-        pid: u16,
-        interfaces: &[&HidInterfaceSummary],
-    ) -> DeviceSummary {
-        let manifest = self.manifests.iter().find(|manifest| {
-            manifest.connections.iter().any(|connection| {
-                interfaces.iter().any(|interface| {
-                    connection.identity.matches_hid(
-                        interface.vendor_id,
-                        interface.product_id,
-                        interface.usage_page,
-                        interface.usage,
-                        interface.interface_number,
-                    )
-                })
-            })
-        });
-        let assessment = self.assessments.get(&(vid, pid));
-        let display_name = manifest
-            .map(|manifest| manifest.display_name.clone())
-            .or_else(|| local_product_name(interfaces))
-            .or_else(|| self.uncontested_upstream_name(vid, pid, assessment))
-            .unwrap_or_else(|| "Razer device".into());
-        let (support_label, support_detail, capabilities) = manifest.map_or_else(
-            || {
-                let (support_label, support_detail) = if assessment.is_some() {
-                    (
-                        "Known device",
-                        "RazeRS recognizes this product from community data. Controls are not implemented yet.",
-                    )
-                } else {
-                    (
-                        "Unrecognized device",
-                        "This Razer product is visible to the operating system but is not in the embedded device catalogs.",
-                    )
-                };
-                (
-                    support_label,
-                    support_detail.into(),
-                    upstream_capabilities(
-                        self.openrazer
-                            .find_usb(vid, pid)
-                            .map(|device| device.upstream_features.as_slice())
-                            .unwrap_or_default(),
-                    ),
-                )
-            },
-            |manifest| {
-                (
-                    support_label(manifest.support.status),
-                    support_detail(manifest.support.status).into(),
-                    manifest.capabilities.names().map(capability_label).collect(),
-                )
-            },
-        );
-
-        DeviceSummary {
-            display_name,
-            vid,
-            pid,
-            interface_count: interfaces.len(),
-            vendor_interface_count: interfaces
-                .iter()
-                .filter(|interface| interface.is_vendor_defined_collection())
-                .count(),
-            support_label,
-            support_detail,
-            capabilities,
-            evidence_label: evidence_label(assessment),
-            control_available: false,
-        }
-    }
-
-    fn uncontested_upstream_name(
-        &self,
-        vid: u16,
-        pid: u16,
-        assessment: Option<&EvidenceAssessment>,
-    ) -> Option<String> {
-        if assessment.is_some_and(|assessment| {
-            assessment.sources.len() > 1 && assessment.name_agreement == EvidenceAgreement::Disagree
-        }) {
-            return None;
-        }
-        self.openrazer
-            .find_usb(vid, pid)
-            .map(|device| device.name.clone())
-            .or_else(|| {
-                self.openrgb
-                    .find_usb(vid, pid)
-                    .map(|device| device.name.clone())
-            })
-            .or_else(|| {
-                self.irazer
-                    .find_usb(vid, pid)
-                    .map(|device| device.name.clone())
-            })
-    }
-}
-
-fn parse_catalog<T>(name: &str, source: &str) -> Result<T, String>
-where
-    T: serde::de::DeserializeOwned,
-{
-    toml::from_str(source).map_err(|error| format!("unable to load embedded {name} data: {error}"))
-}
-
-fn validate_catalog(name: &str, problems: Vec<String>) -> Result<(), String> {
-    if problems.is_empty() {
-        Ok(())
+fn agent_command(current_executable: &Path) -> (PathBuf, Vec<OsString>) {
+    let executable_name = if cfg!(windows) {
+        "razers-agent.exe"
     } else {
-        Err(format!(
-            "embedded {name} data is invalid: {}",
-            problems.join("; ")
-        ))
-    }
-}
-
-fn local_product_name(interfaces: &[&HidInterfaceSummary]) -> Option<String> {
-    interfaces.iter().find_map(|interface| {
-        interface
-            .product
-            .as_deref()
-            .map(str::trim)
-            .filter(|name| !name.is_empty())
-            .map(str::to_owned)
-    })
-}
-
-fn evidence_label(assessment: Option<&EvidenceAssessment>) -> String {
-    let Some(assessment) = assessment else {
-        return "No imported community record".into();
+        "razers-agent"
     };
-    match assessment.readiness {
-        EvidenceReadiness::Corroborated => format!(
-            "Corroborated by {} community sources",
-            assessment.sources.len()
-        ),
-        EvidenceReadiness::NeedsResearch => "Community sources need reconciliation".into(),
-        EvidenceReadiness::SingleSource => "Recorded by one community source".into(),
+    let sibling = current_executable.with_file_name(executable_name);
+    if sibling.is_file() {
+        (sibling, vec!["--stdio".into()])
+    } else {
+        (
+            current_executable.to_path_buf(),
+            vec!["--agent-stdio".into()],
+        )
     }
 }
 
-fn upstream_capabilities(features: &[UpstreamFeature]) -> Vec<&'static str> {
-    features
-        .iter()
-        .filter_map(|feature| match feature {
-            UpstreamFeature::Battery => Some("Battery"),
-            UpstreamFeature::Dpi => Some("DPI"),
-            UpstreamFeature::GameMode => Some("Game mode"),
-            UpstreamFeature::Identity => None,
-            UpstreamFeature::Layout => Some("Layout"),
-            UpstreamFeature::Lighting => Some("Lighting"),
-            UpstreamFeature::Macro => Some("Macros"),
-            UpstreamFeature::PollingRate => Some("Polling rate"),
-            UpstreamFeature::ScrollMode => Some("Scroll mode"),
-        })
-        .collect()
-}
+fn request_devices(program: PathBuf, arguments: &[OsString]) -> Result<DeviceList, String> {
+    let mut child = Command::new(&program)
+        .args(arguments)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| format!("unable to start the local RazeRS Agent: {error}"))?;
+    let request = Request::new(METHOD_DEVICES_LIST, json!(1));
+    let mut input = child
+        .stdin
+        .take()
+        .ok_or_else(|| "unable to open the local RazeRS Agent input".to_owned())?;
+    serde_json::to_writer(&mut input, &request)
+        .map_err(|error| format!("unable to encode the Agent request: {error}"))?;
+    input
+        .write_all(b"\n")
+        .map_err(|error| format!("unable to send the Agent request: {error}"))?;
+    drop(input);
 
-fn capability_label(capability: &str) -> &'static str {
-    match capability {
-        "dpi" => "DPI",
-        "polling-rate" => "Polling rate",
-        "lighting" => "Lighting",
-        "battery" => "Battery",
-        _ => "Other",
+    let output = child
+        .wait_with_output()
+        .map_err(|error| format!("unable to wait for the local RazeRS Agent: {error}"))?;
+    if !output.status.success() {
+        let detail = String::from_utf8_lossy(&output.stderr).trim().to_owned();
+        return Err(if detail.is_empty() {
+            "the local RazeRS Agent stopped unexpectedly".into()
+        } else {
+            format!("the local RazeRS Agent stopped unexpectedly: {detail}")
+        });
     }
+    decode_device_response(&output.stdout)
 }
 
-fn support_label(status: SupportStatus) -> &'static str {
-    match status {
-        SupportStatus::Detected => "Detected",
-        SupportStatus::Experimental => "Experimental",
-        SupportStatus::Verified => "Verified",
-        SupportStatus::Regressed => "Needs attention",
-        SupportStatus::Unsupported => "Unsupported",
+fn decode_device_response(encoded: &[u8]) -> Result<DeviceList, String> {
+    let response: Response = serde_json::from_slice(encoded)
+        .map_err(|error| format!("the local RazeRS Agent returned invalid data: {error}"))?;
+    if response.jsonrpc != JSON_RPC_VERSION || response.id != json!(1) {
+        return Err("the local RazeRS Agent returned a mismatched response".into());
     }
-}
-
-fn support_detail(status: SupportStatus) -> &'static str {
-    match status {
-        SupportStatus::Detected => {
-            "RazeRS can identify this model. Settings stay locked until its control driver passes the safety checks."
+    if let Some(error) = response.error {
+        return Err(format!("{} ({})", error.message, error.code));
+    }
+    match response.result {
+        Some(ResponseResult::DeviceList(devices))
+            if devices.protocol_version == PROTOCOL_VERSION =>
+        {
+            Ok(devices)
         }
-        SupportStatus::Experimental => {
-            "Controls are available as an explicit preview and may have documented limitations."
+        Some(ResponseResult::DeviceList(_)) => {
+            Err("the local RazeRS Agent uses an incompatible protocol version".into())
         }
-        SupportStatus::Verified => "RazeRS has a recorded hardware test for this device.",
-        SupportStatus::Regressed => {
-            "This device worked before, but its controls are temporarily unavailable."
+        Some(ResponseResult::AgentInfo(_)) | None => {
+            Err("the local RazeRS Agent returned an unexpected result".into())
         }
-        SupportStatus::Unsupported => "RazeRS cannot control this device in its current form.",
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use razers_ipc::{DeviceSummary, Response};
+
     use super::*;
 
-    fn interface(pid: u16, usage_page: u16, product: Option<&str>) -> HidInterfaceSummary {
-        HidInterfaceSummary {
-            vendor_id: 0x1532,
-            product_id: pid,
-            release_number: 0x0100,
-            usage_page,
-            usage: 1,
-            interface_number: 2,
-            manufacturer: Some("Razer".into()),
-            product: product.map(str::to_owned),
-            serial_number_present: true,
-        }
-    }
-
     #[test]
-    fn embedded_knowledge_is_valid_and_self_contained() {
-        let knowledge = EmbeddedKnowledge::load().unwrap();
-
-        assert!(!knowledge.manifests.is_empty());
-        assert!(knowledge.assessments.contains_key(&(0x1532, 0x0099)));
-    }
-
-    #[test]
-    fn groups_interfaces_and_exposes_no_control_before_implementation() {
-        let knowledge = EmbeddedKnowledge::load().unwrap();
-        let interfaces = [
-            interface(0x0099, 0x0001, Some("Basilisk V3")),
-            interface(0x0099, 0xff00, Some("Basilisk V3")),
-        ];
-
-        let snapshot = knowledge.summarize(&interfaces);
-
-        assert_eq!(snapshot.interface_count, 2);
-        assert_eq!(snapshot.devices.len(), 1);
-        assert_eq!(snapshot.devices[0].display_name, "Razer Basilisk V3");
-        assert_eq!(snapshot.devices[0].interface_count, 2);
-        assert_eq!(snapshot.devices[0].vendor_interface_count, 1);
-        assert_eq!(snapshot.devices[0].support_label, "Detected");
-        assert!(!snapshot.devices[0].control_available);
-        assert!(snapshot.devices[0].capabilities.contains(&"DPI"));
-        assert_eq!(
-            snapshot.devices[0].evidence_label,
-            "Corroborated by 3 community sources"
+    fn decodes_a_versioned_device_response() {
+        let response = Response::success(
+            json!(1),
+            ResponseResult::DeviceList(DeviceList {
+                protocol_version: PROTOCOL_VERSION,
+                devices: vec![DeviceSummary {
+                    display_name: "Razer Test Mouse".into(),
+                    vid: 0x1532,
+                    pid: 1,
+                    interface_count: 2,
+                    vendor_interface_count: 1,
+                    support_label: "Detected".into(),
+                    support_detail: "Read-only".into(),
+                    capabilities: vec!["DPI".into()],
+                    evidence_label: "Recorded".into(),
+                    control_available: false,
+                }],
+                interface_count: 2,
+            }),
         );
+
+        let decoded = decode_device_response(&serde_json::to_vec(&response).unwrap()).unwrap();
+
+        assert_eq!(decoded.devices[0].display_name, "Razer Test Mouse");
+        assert_eq!(decoded.protocol_version, PROTOCOL_VERSION);
     }
 
     #[test]
-    fn keeps_unknown_devices_honest_and_uses_local_product_names() {
-        let knowledge = EmbeddedKnowledge::load().unwrap();
-        let snapshot = knowledge.summarize(&[interface(0xffff, 0xff00, Some("Prototype Mouse"))]);
-
-        assert_eq!(snapshot.devices[0].display_name, "Prototype Mouse");
-        assert_eq!(snapshot.devices[0].support_label, "Unrecognized device");
-        assert_eq!(
-            snapshot.devices[0].evidence_label,
-            "No imported community record"
+    fn rejects_error_and_wrong_method_responses() {
+        let error = Response::failure(json!(1), -32603, "Device discovery failed");
+        let wrong_result = Response::success(
+            json!(1),
+            ResponseResult::AgentInfo(razers_ipc::AgentInfo {
+                protocol_version: PROTOCOL_VERSION,
+                agent_version: "0.1.0".into(),
+                access_mode: "descriptor-only".into(),
+                transport: "stdio-child".into(),
+            }),
         );
-        assert!(snapshot.devices[0].capabilities.is_empty());
-        assert!(!snapshot.devices[0].control_available);
+
+        assert!(decode_device_response(&serde_json::to_vec(&error).unwrap()).is_err());
+        assert!(decode_device_response(&serde_json::to_vec(&wrong_result).unwrap()).is_err());
+    }
+
+    #[test]
+    fn rejects_an_incompatible_result_protocol_version() {
+        let response = Response::success(
+            json!(1),
+            ResponseResult::DeviceList(DeviceList {
+                protocol_version: PROTOCOL_VERSION + 1,
+                devices: Vec::new(),
+                interface_count: 0,
+            }),
+        );
+
+        let error = decode_device_response(&serde_json::to_vec(&response).unwrap()).unwrap_err();
+
+        assert!(error.contains("incompatible protocol version"));
+    }
+
+    #[test]
+    fn falls_back_to_the_app_when_a_sibling_agent_is_missing() {
+        let temporary =
+            std::env::temp_dir().join(format!("razers-agent-path-test-{}", std::process::id()));
+        let app = temporary.join(if cfg!(windows) {
+            "razers.exe"
+        } else {
+            "razers"
+        });
+
+        let (fallback, fallback_arguments) = agent_command(&app);
+
+        assert_eq!(fallback, app);
+        assert_eq!(fallback_arguments, [OsString::from("--agent-stdio")]);
     }
 }
