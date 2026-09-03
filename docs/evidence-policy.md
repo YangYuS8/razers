@@ -60,6 +60,33 @@ When sources disagree:
 Agreement is strong evidence, not an automatic merge rule. Disagreement triggers
 research, not a requirement that the maintainer purchase the device.
 
+## Assessment workflow
+
+The developer CLI reconciles the pinned catalogs without selecting disputed
+values:
+
+```bash
+cargo run -p razers-cli -- upstream assess 1532:0099
+cargo run -p razers-cli -- upstream shortlist
+cargo run -p razers-cli -- upstream conflicts
+```
+
+Each assessment reports source coverage and separate agreement states for name,
+device kind, matrix dimensions, and OpenRGB/iRazer protocol parameters. The
+readiness labels mean:
+
+- `corroborated`: at least two catalogs contain the identity and no comparable
+  material field disagrees;
+- `needs-research`: a comparable device kind, matrix, or protocol field disagrees;
+- `single-source`: only one imported catalog contains the identity.
+
+Name differences remain visible but do not by themselves block a candidate,
+because spelling, branding, and revision suffixes must be normalized during
+review. Likewise, `not-comparable` means a fact is absent from one side; it does
+not imply agreement. A corroborated result is a research shortlist entry—not an
+`experimental` or `verified` RazeRS support claim—and implementation still must
+meet the evidence threshold above.
+
 ## Confidence and user-facing claims
 
 - `detected`: the identity is known, but no RazeRS command is offered.

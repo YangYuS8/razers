@@ -255,6 +255,196 @@ impl UpstreamSupportClaim {
     }
 }
 
+/// One upstream implementation contributing facts about a USB identity.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum EvidenceSource {
+    OpenRazer,
+    OpenRgb,
+    Irazer,
+}
+
+impl EvidenceSource {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::OpenRazer => "OpenRazer",
+            Self::OpenRgb => "OpenRGB",
+            Self::Irazer => "iRazer",
+        }
+    }
+}
+
+/// Whether independent sources can be compared for one fact and agree on it.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum EvidenceAgreement {
+    NotComparable,
+    Agree,
+    Disagree,
+}
+
+impl EvidenceAgreement {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::NotComparable => "not-comparable",
+            Self::Agree => "agree",
+            Self::Disagree => "disagree",
+        }
+    }
+}
+
+/// Review readiness derived from source coverage and recorded disagreements.
+///
+/// This is a research aid, not an automatic support or live-I/O decision.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum EvidenceReadiness {
+    Corroborated,
+    NeedsResearch,
+    SingleSource,
+}
+
+impl EvidenceReadiness {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Corroborated => "corroborated",
+            Self::NeedsResearch => "needs-research",
+            Self::SingleSource => "single-source",
+        }
+    }
+}
+
+/// Field-level assessment for one USB identity across all imported catalogs.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct EvidenceAssessment {
+    pub vid: u16,
+    pub pid: u16,
+    pub sources: Vec<EvidenceSource>,
+    pub name_agreement: EvidenceAgreement,
+    pub kind_agreement: EvidenceAgreement,
+    pub matrix_agreement: EvidenceAgreement,
+    pub protocol_agreement: EvidenceAgreement,
+    pub readiness: EvidenceReadiness,
+    pub openrazer_features: Vec<UpstreamFeature>,
+    pub irazer_support: Option<UpstreamSupportClaim>,
+}
+
+/// Reconcile source coverage without silently selecting any disputed value.
+pub fn assess_evidence(
+    openrazer: &UpstreamCatalog,
+    openrgb: &OpenRgbCatalog,
+    irazer: &IrazerCatalog,
+) -> Vec<EvidenceAssessment> {
+    let identities = openrazer
+        .devices
+        .iter()
+        .map(|device| (device.vid, device.pid))
+        .chain(
+            openrgb
+                .devices
+                .iter()
+                .map(|device| (device.vid, device.pid)),
+        )
+        .chain(irazer.devices.iter().map(|device| (device.vid, device.pid)))
+        .collect::<BTreeSet<_>>();
+
+    identities
+        .into_iter()
+        .map(|(vid, pid)| {
+            let openrazer_device = openrazer.find_usb(vid, pid);
+            let openrgb_device = openrgb.find_usb(vid, pid);
+            let irazer_device = irazer.find_usb(vid, pid);
+
+            let mut sources = Vec::new();
+            if openrazer_device.is_some() {
+                sources.push(EvidenceSource::OpenRazer);
+            }
+            if openrgb_device.is_some() {
+                sources.push(EvidenceSource::OpenRgb);
+            }
+            if irazer_device.is_some() {
+                sources.push(EvidenceSource::Irazer);
+            }
+
+            let names = openrazer_device
+                .map(|device| device.name.as_str())
+                .into_iter()
+                .chain(openrgb_device.map(|device| device.name.as_str()))
+                .chain(irazer_device.map(|device| device.name.as_str()))
+                .collect::<Vec<_>>();
+            let kinds = openrazer_device
+                .map(|device| device.kind.as_str())
+                .into_iter()
+                .chain(openrgb_device.map(|device| device.kind.as_str()))
+                .chain(irazer_device.map(|device| device.kind.as_str()))
+                .collect::<Vec<_>>();
+
+            let matrix_agreement = match (
+                openrazer_device.and_then(|device| device.matrix),
+                openrgb_device.map(|device| device.matrix),
+            ) {
+                (Some(left), Some(right)) if left == right => EvidenceAgreement::Agree,
+                (Some(_), Some(_)) => EvidenceAgreement::Disagree,
+                _ => EvidenceAgreement::NotComparable,
+            };
+            let protocol_agreement = match (openrgb_device, irazer_device) {
+                (Some(left), Some(right))
+                    if left.matrix_family == right.matrix_family
+                        && left.transaction_id == right.transaction_id =>
+                {
+                    EvidenceAgreement::Agree
+                }
+                (Some(_), Some(_)) => EvidenceAgreement::Disagree,
+                _ => EvidenceAgreement::NotComparable,
+            };
+            let name_agreement = string_agreement(&names, true);
+            let kind_agreement = string_agreement(&kinds, false);
+            let has_material_disagreement = [kind_agreement, matrix_agreement, protocol_agreement]
+                .contains(&EvidenceAgreement::Disagree);
+            let readiness = if has_material_disagreement {
+                EvidenceReadiness::NeedsResearch
+            } else if sources.len() >= 2 {
+                EvidenceReadiness::Corroborated
+            } else {
+                EvidenceReadiness::SingleSource
+            };
+
+            EvidenceAssessment {
+                vid,
+                pid,
+                sources,
+                name_agreement,
+                kind_agreement,
+                matrix_agreement,
+                protocol_agreement,
+                readiness,
+                openrazer_features: openrazer_device
+                    .map(|device| device.upstream_features.clone())
+                    .unwrap_or_default(),
+                irazer_support: irazer_device.map(|device| device.upstream_support),
+            }
+        })
+        .collect()
+}
+
+fn string_agreement(values: &[&str], case_insensitive: bool) -> EvidenceAgreement {
+    let Some((first, rest)) = values.split_first() else {
+        return EvidenceAgreement::NotComparable;
+    };
+    if rest.is_empty() {
+        return EvidenceAgreement::NotComparable;
+    }
+    let agrees = rest.iter().all(|value| {
+        if case_insensitive {
+            first.eq_ignore_ascii_case(value)
+        } else {
+            first == value
+        }
+    });
+    if agrees {
+        EvidenceAgreement::Agree
+    } else {
+        EvidenceAgreement::Disagree
+    }
+}
+
 impl UpstreamCatalog {
     pub fn load_file(path: impl AsRef<Path>) -> Result<Self, UpstreamCatalogError> {
         let path = path.as_ref();
@@ -739,6 +929,57 @@ source_symbol = "RazerTestMouse"
 upstream_features = ["identity", "dpi"]
 methods = ["get_device_type_mouse", "get_dpi_xy"]
 max_dpi = 16000
+matrix = [1, 2]
+"#;
+
+    const OPENRGB_VALID: &str = r#"
+schema_version = 1
+
+[source]
+name = "OpenRGB"
+repository = "owner/openrgb"
+commit = "0123456789abcdef0123456789abcdef01234567"
+path = "Controllers/RazerController"
+license = "GPL-2.0-or-later"
+generated_by = "tools/import_openrgb.py"
+
+[[devices]]
+name = "Razer Differently Named Mouse"
+kind = "mouse"
+vid = 0x1532
+pid = 0x0001
+pid_symbol = "RAZER_TEST_MOUSE_PID"
+source_path = "Controllers/RazerController/RazerDevices.cpp"
+source_symbol = "test_mouse_device"
+matrix_family = "extended"
+transaction_id = 0x1f
+matrix = [1, 2]
+zones = ["test_mouse_zone"]
+"#;
+
+    const IRAZER_VALID: &str = r#"
+schema_version = 1
+
+[source]
+name = "iRazer"
+repository = "owner/irazer"
+commit = "0123456789abcdef0123456789abcdef01234567"
+path = "Sources/iRazer"
+license = "MIT"
+generated_by = "tools/import_irazer.py"
+
+[[devices]]
+source_id = "test-mouse"
+name = "Razer Test Mouse"
+kind = "mouse"
+vid = 0x1532
+pid = 0x0001
+upstream_support = "supported"
+capability_labels = ["Lighting"]
+matrix_family = "extended"
+transaction_id = 0x1f
+source_path = "Sources/iRazer/DeviceCatalog.swift"
+source_symbol = "DeviceCatalog.all:test-mouse"
 "#;
 
     #[test]
@@ -769,33 +1010,7 @@ max_dpi = 16000
     #[test]
     fn compares_overlapping_catalogs_without_merging_disagreements() {
         let openrazer: UpstreamCatalog = toml::from_str(VALID).unwrap();
-        let openrgb: OpenRgbCatalog = toml::from_str(
-            r#"
-schema_version = 1
-
-[source]
-name = "OpenRGB"
-repository = "owner/openrgb"
-commit = "0123456789abcdef0123456789abcdef01234567"
-path = "Controllers/RazerController"
-license = "GPL-2.0-or-later"
-generated_by = "tools/import_openrgb.py"
-
-[[devices]]
-name = "Razer Differently Named Mouse"
-kind = "mouse"
-vid = 0x1532
-pid = 0x0001
-pid_symbol = "RAZER_TEST_MOUSE_PID"
-source_path = "Controllers/RazerController/RazerDevices.cpp"
-source_symbol = "test_mouse_device"
-matrix_family = "extended"
-transaction_id = 0x1f
-matrix = [1, 2]
-zones = ["test_mouse_zone"]
-"#,
-        )
-        .unwrap();
+        let openrgb: OpenRgbCatalog = toml::from_str(OPENRGB_VALID).unwrap();
 
         assert!(openrgb.validate().is_empty());
         assert_eq!(
@@ -807,6 +1022,71 @@ zones = ["test_mouse_zone"]
                 name_differences: 1,
                 matrix_differences: 0,
             }
+        );
+    }
+
+    #[test]
+    fn corroborates_identity_and_matching_protocol_facts_across_catalogs() {
+        let openrazer: UpstreamCatalog = toml::from_str(VALID).unwrap();
+        let openrgb: OpenRgbCatalog = toml::from_str(OPENRGB_VALID).unwrap();
+        let irazer: IrazerCatalog = toml::from_str(IRAZER_VALID).unwrap();
+
+        let assessments = assess_evidence(&openrazer, &openrgb, &irazer);
+
+        assert_eq!(assessments.len(), 1);
+        assert_eq!(
+            assessments[0].sources,
+            [
+                EvidenceSource::OpenRazer,
+                EvidenceSource::OpenRgb,
+                EvidenceSource::Irazer
+            ]
+        );
+        assert_eq!(assessments[0].name_agreement, EvidenceAgreement::Disagree);
+        assert_eq!(assessments[0].kind_agreement, EvidenceAgreement::Agree);
+        assert_eq!(assessments[0].matrix_agreement, EvidenceAgreement::Agree);
+        assert_eq!(assessments[0].protocol_agreement, EvidenceAgreement::Agree);
+        assert_eq!(assessments[0].readiness, EvidenceReadiness::Corroborated);
+        assert_eq!(
+            assessments[0].irazer_support,
+            Some(UpstreamSupportClaim::Supported)
+        );
+    }
+
+    #[test]
+    fn sends_material_disagreements_to_research_without_selecting_a_value() {
+        let openrazer: UpstreamCatalog = toml::from_str(VALID).unwrap();
+        let openrgb: OpenRgbCatalog =
+            toml::from_str(&OPENRGB_VALID.replace("matrix = [1, 2]", "matrix = [2, 1]")).unwrap();
+        let irazer: IrazerCatalog = toml::from_str(IRAZER_VALID).unwrap();
+
+        let assessments = assess_evidence(&openrazer, &openrgb, &irazer);
+
+        assert_eq!(assessments[0].matrix_agreement, EvidenceAgreement::Disagree);
+        assert_eq!(assessments[0].readiness, EvidenceReadiness::NeedsResearch);
+    }
+
+    #[test]
+    fn identifies_single_source_records_without_promoting_them() {
+        let openrazer: UpstreamCatalog = toml::from_str(VALID).unwrap();
+        let openrgb = OpenRgbCatalog {
+            schema_version: SUPPORTED_OPENRGB_SCHEMA_VERSION,
+            source: openrazer.source.clone(),
+            devices: Vec::new(),
+        };
+        let irazer = IrazerCatalog {
+            schema_version: SUPPORTED_IRAZER_SCHEMA_VERSION,
+            source: openrazer.source.clone(),
+            devices: Vec::new(),
+        };
+
+        let assessments = assess_evidence(&openrazer, &openrgb, &irazer);
+
+        assert_eq!(assessments[0].sources, [EvidenceSource::OpenRazer]);
+        assert_eq!(assessments[0].readiness, EvidenceReadiness::SingleSource);
+        assert_eq!(
+            assessments[0].matrix_agreement,
+            EvidenceAgreement::NotComparable
         );
     }
 

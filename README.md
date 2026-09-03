@@ -58,6 +58,7 @@ cargo test --workspace
 cargo run -p razers-cli -- registry validate devices
 cargo run -p razers-cli -- upstream validate
 cargo run -p razers-cli -- upstream stats
+cargo run -p razers-cli -- upstream shortlist
 cargo run -p razers-cli -- registry list devices
 cargo run -p razers-cli -- devices devices
 ```
@@ -72,7 +73,13 @@ Look up source-derived facts for any imported USB identity:
 
 ```bash
 cargo run -p razers-cli -- upstream lookup 1532:0099
+cargo run -p razers-cli -- upstream assess 1532:0099
 ```
+
+`upstream shortlist` lists identities corroborated by multiple catalogs without a
+material recorded conflict. `upstream conflicts` lists identities whose device
+kind, matrix dimensions, or protocol parameters need targeted research. These are
+triage results, not RazeRS support or hardware-verification claims.
 
 Encode and decode a protocol packet without touching hardware:
 
@@ -98,6 +105,7 @@ Milestone 0 is complete, and descriptor-only enumeration begins Milestone 1:
 - [x] Descriptor-only HID collection classification that never authorizes writes
 - [x] Reproducible import of 267 OpenRazer, 196 OpenRGB, and 192 iRazer records
 - [x] Cross-source comparison without silently resolving conflicting facts
+- [x] Field-level evidence assessment, candidate shortlist, and conflict queue
 - [ ] Safe, read-only identification of the first physical device
 - [ ] Agent and versioned local IPC
 - [ ] Capability-driven desktop UI

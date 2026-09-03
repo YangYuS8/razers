@@ -10,6 +10,7 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-features
 cargo run -p razers-cli -- registry validate devices
 cargo run -p razers-cli -- upstream validate
+cargo run -p razers-cli -- upstream conflicts
 ```
 
 All Rust source files should carry `SPDX-License-Identifier: GPL-2.0-or-later`.
