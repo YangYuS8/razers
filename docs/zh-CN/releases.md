@@ -24,6 +24,6 @@ Cargo patch 和 Actions patch/minor 在必需 CI 通过后可自动合并；
 Cargo minor/major 与 Actions major 留待审阅。Actions 固定到不可变提交 SHA，
 Dependabot 同时维护固定值和版本注释。
 
-mdBook 固定在 `tools/docs-requirements.txt`，升级时须验证两种语言与本地链接。
+mdBook 固定在 `tools/docs-tools.toml`，升级时须验证两种语言与本地链接。
 Documentation 工作流在每个 PR 构建并验证 mdBook/rustdoc，只有 `main` 部署 Pages。
 本站描述 `main`，历史版本请查看对应 tag 和发行日志。
