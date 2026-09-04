@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 //! Versioned, declarative device manifests and their validation rules.
+//!
+//! 版本化、声明式设备清单及其校验规则。
 
 pub mod upstream;
 
@@ -84,6 +86,8 @@ pub struct MatchDescriptor {
 
 impl MatchDescriptor {
     /// Return whether a privacy-preserving HID descriptor matches this connection.
+    ///
+    /// 判断不含隐私标识的 HID 描述是否匹配此连接。
     pub fn matches_hid(
         &self,
         vendor_id: u16,

@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-use std::{collections::BTreeMap, env, path::Path};
+use razers_i18n::{Locale, language_args};
+use std::{collections::BTreeMap, env, path::Path, sync::OnceLock};
+
+static LOCALE: OnceLock<Locale> = OnceLock::new();
+fn locale() -> Locale {
+    LOCALE.get().copied().unwrap_or_default()
+}
 
 use razers_device_registry::{
     DeviceKind, Registry,
@@ -13,36 +19,25 @@ use razers_protocol_core::Report90;
 use razers_transport_hidapi::{HidInterfaceSummary, enumerate_razer};
 use razers_types::{DeviceId, SupportStatus};
 
-const HELP: &str = r#"razersctl - hardware-free RazeRS developer tools
-
-USAGE:
-  razersctl registry validate [DIRECTORY]
-  razersctl registry list [DIRECTORY]
-  razersctl registry show <DEVICE_ID> [DIRECTORY]
-  razersctl upstream validate [OPENRAZER_CATALOG OPENRGB_CATALOG IRAZER_CATALOG]
-  razersctl upstream stats [OPENRAZER_CATALOG OPENRGB_CATALOG IRAZER_CATALOG]
-  razersctl upstream lookup <VID:PID> [OPENRAZER_CATALOG OPENRGB_CATALOG IRAZER_CATALOG]
-  razersctl upstream assess <VID:PID> [OPENRAZER_CATALOG OPENRGB_CATALOG IRAZER_CATALOG]
-  razersctl upstream shortlist [OPENRAZER_CATALOG OPENRGB_CATALOG IRAZER_CATALOG]
-  razersctl upstream conflicts [OPENRAZER_CATALOG OPENRGB_CATALOG IRAZER_CATALOG]
-  razersctl devices [DIRECTORY]
-  razersctl report encode <COMMAND_CLASS> <COMMAND_ID> [ARGUMENT_HEX]
-  razersctl report decode <REPORT_HEX>
-  razersctl help
-
-Numeric command fields accept decimal or 0x-prefixed hexadecimal values.
-Registry commands default to ./devices. This milestone never opens hardware.
-Upstream commands default to the OpenRazer, OpenRGB, and iRazer catalogs under
-./data/upstream. Catalog entries are evidence, not RazeRS support claims.
-"#;
-
 const DEFAULT_OPENRAZER_CATALOG: &str = "data/upstream/openrazer-devices.toml";
 const DEFAULT_OPENRGB_CATALOG: &str = "data/upstream/openrgb-devices.toml";
 const DEFAULT_IRAZER_CATALOG: &str = "data/upstream/irazer-devices.toml";
 
 fn main() {
-    if let Err(error) = run(env::args().skip(1).collect()) {
-        eprintln!("error: {error}");
+    let parsed = language_args(env::args().skip(1).collect());
+    let language = parsed
+        .as_ref()
+        .ok()
+        .and_then(|(language, _)| *language)
+        .map_or_else(Locale::system, |value| value.resolve());
+    let _ = LOCALE.set(language);
+    if let Err(error) = parsed.and_then(|(_, args)| run(args)) {
+        eprintln!(
+            "{}: {}\n{}",
+            locale().text("error"),
+            locale().text("Operation failed; diagnostic detail"),
+            locale().text(&error)
+        );
         std::process::exit(2);
     }
 }
@@ -50,11 +45,11 @@ fn main() {
 fn run(args: Vec<String>) -> Result<(), String> {
     match args.as_slice() {
         [] => {
-            print!("{HELP}");
+            print!("{}", locale().text("cli.help"));
             Ok(())
         }
         [single] if single == "help" || single == "--help" || single == "-h" => {
-            print!("{HELP}");
+            print!("{}", locale().text("cli.help"));
             Ok(())
         }
         [single] if single == "--version" || single == "-V" => {
@@ -182,16 +177,19 @@ fn run(args: Vec<String>) -> Result<(), String> {
         [group, command, report] if group == "report" && command == "decode" => {
             report_decode(report)
         }
-        _ => Err(format!("unrecognized arguments\n\n{HELP}")),
+        _ => Err(locale().format(
+            "unrecognized arguments\n\n{HELP}",
+            &[locale().text("cli.help").to_string()],
+        )),
     }
 }
 
 fn load_registry(directory: &Path) -> Result<Registry, String> {
     let registry = Registry::load_dir(directory).map_err(|error| error.to_string())?;
     if registry.is_empty() {
-        return Err(format!(
+        return Err(locale().format(
             "registry directory '{}' contains no TOML manifests",
-            directory.display()
+            &[format!("{}", directory.display())],
         ));
     }
     Ok(registry)
@@ -200,10 +198,14 @@ fn load_registry(directory: &Path) -> Result<Registry, String> {
 fn registry_validate(directory: &Path) -> Result<(), String> {
     let registry = load_registry(directory)?;
     println!(
-        "validated {} device manifest{} in {}",
-        registry.len(),
-        if registry.len() == 1 { "" } else { "s" },
-        directory.display()
+        "{}",
+        locale().format(
+            "device manifests validated: {} in {}",
+            &[
+                format!("{}", registry.len()),
+                format!("{}", directory.display())
+            ]
+        )
     );
     Ok(())
 }
@@ -213,12 +215,17 @@ fn registry_list(directory: &Path) -> Result<(), String> {
     for loaded in registry.iter() {
         let device = &loaded.descriptor;
         println!(
-            "{}\t{}\t{}\t{}\t{} capabilities",
-            device.id,
-            device.display_name,
-            device_kind(device.kind),
-            support_status(device.support.status),
-            device.capabilities.count()
+            "{}",
+            locale().format(
+                "{}\t{}\t{}\t{}\t{} capabilities",
+                &[
+                    format!("{}", device.id),
+                    device.display_name.to_string(),
+                    device_kind(device.kind).to_string(),
+                    support_status(device.support.status).to_string(),
+                    format!("{}", device.capabilities.count())
+                ]
+            )
         );
     }
     Ok(())
@@ -227,34 +234,71 @@ fn registry_list(directory: &Path) -> Result<(), String> {
 fn registry_show(id: &str, directory: &Path) -> Result<(), String> {
     let id = DeviceId::new(id).map_err(|error| error.to_string())?;
     let registry = load_registry(directory)?;
-    let loaded = registry
-        .get(&id)
-        .ok_or_else(|| format!("device '{id}' was not found in {}", directory.display()))?;
+    let loaded = registry.get(&id).ok_or_else(|| {
+        locale().format(
+            "device '{id}' was not found in {}",
+            &[format!("{}", id), format!("{}", directory.display())],
+        )
+    })?;
     let device = &loaded.descriptor;
 
-    println!("id: {}", device.id);
-    println!("name: {}", device.display_name);
-    println!("kind: {}", device_kind(device.kind));
-    println!("support: {}", support_status(device.support.status));
-    println!("notes: {}", device.support.notes);
-    println!("manifest: {}", loaded.source_path.display());
-    println!("connections:");
+    println!("{}", locale().format("id: {}", &[format!("{}", device.id)]));
+    println!(
+        "{}",
+        locale().format("name: {}", std::slice::from_ref(&device.display_name))
+    );
+    println!(
+        "{}",
+        locale().format("kind: {}", &[device_kind(device.kind).to_string()])
+    );
+    println!(
+        "{}",
+        locale().format(
+            "support: {}",
+            &[support_status(device.support.status).to_string()]
+        )
+    );
+    println!(
+        "{}",
+        locale().format("notes: {}", std::slice::from_ref(&device.support.notes))
+    );
+    println!(
+        "{}",
+        locale().format(
+            "manifest: {}",
+            &[format!("{}", loaded.source_path.display())]
+        )
+    );
+    println!("{}", locale().format("connections:", &[]));
     for connection in &device.connections {
         println!(
-            "  - {}: {:?}, {:04x}:{:04x}, protocol={}, report-id=0x{:02x}",
-            connection.id,
-            connection.transport,
-            connection.identity.vid,
-            connection.identity.pid,
-            connection.protocol.family,
-            connection.protocol.report_id
+            "{}",
+            locale().format(
+                "  - {}: {:?}, {:04x}:{:04x}, protocol={}, report-id=0x{:02x}",
+                &[
+                    format!("{}", connection.id),
+                    format!("{:?}", connection.transport),
+                    format!("{:04x}", connection.identity.vid),
+                    format!("{:04x}", connection.identity.pid),
+                    connection.protocol.family.to_string(),
+                    format!("{:02x}", connection.protocol.report_id)
+                ]
+            )
         );
     }
     println!(
-        "capabilities: {}",
-        device.capabilities.names().collect::<Vec<_>>().join(", ")
+        "{}",
+        locale().format(
+            "capabilities: {}",
+            &[device
+                .capabilities
+                .names()
+                .collect::<Vec<_>>()
+                .join(", ")
+                .to_string()]
+        )
     );
-    println!("evidence:");
+    println!("{}", locale().format("evidence:", &[]));
     for evidence in &device.evidence {
         println!(
             "  - {}/{}@{}:{} ({})",
@@ -289,22 +333,37 @@ fn upstream_validate(
     let openrgb = load_openrgb_catalog(openrgb_path)?;
     let irazer = load_irazer_catalog(irazer_path)?;
     println!(
-        "validated {} evidence-only device identities from {}@{}",
-        openrazer.devices.len(),
-        openrazer.source.repository,
-        &openrazer.source.commit[..12]
+        "{}",
+        locale().format(
+            "validated {} evidence-only device identities from {}@{}",
+            &[
+                format!("{}", openrazer.devices.len()),
+                openrazer.source.repository.to_string(),
+                openrazer.source.commit[..12].to_string()
+            ]
+        )
     );
     println!(
-        "validated {} evidence-only lighting identities from {}@{}",
-        openrgb.devices.len(),
-        openrgb.source.repository,
-        &openrgb.source.commit[..12]
+        "{}",
+        locale().format(
+            "validated {} evidence-only lighting identities from {}@{}",
+            &[
+                format!("{}", openrgb.devices.len()),
+                openrgb.source.repository.to_string(),
+                openrgb.source.commit[..12].to_string()
+            ]
+        )
     );
     println!(
-        "validated {} evidence-only cross-platform identities from {}@{}",
-        irazer.devices.len(),
-        irazer.source.repository,
-        &irazer.source.commit[..12]
+        "{}",
+        locale().format(
+            "validated {} evidence-only cross-platform identities from {}@{}",
+            &[
+                format!("{}", irazer.devices.len()),
+                irazer.source.repository.to_string(),
+                irazer.source.commit[..12].to_string()
+            ]
+        )
     );
     print_comparison(&openrazer, &openrgb);
     print_irazer_comparison(&irazer, &openrgb);
@@ -328,25 +387,48 @@ fn upstream_stats(
         }
     }
 
-    println!("source: {}", catalog.source.name);
-    println!("repository: {}", catalog.source.repository);
-    println!("commit: {}", catalog.source.commit);
-    println!("devices: {}", catalog.devices.len());
     println!(
-        "kinds: {}",
-        kinds
-            .into_iter()
-            .map(|(kind, count)| format!("{kind}={count}"))
-            .collect::<Vec<_>>()
-            .join(", ")
+        "{}",
+        locale().format("source: {}", std::slice::from_ref(&catalog.source.name))
     );
     println!(
-        "upstream features: {}",
-        features
-            .into_iter()
-            .map(|(feature, count)| format!("{feature}={count}"))
-            .collect::<Vec<_>>()
-            .join(", ")
+        "{}",
+        locale().format(
+            "repository: {}",
+            std::slice::from_ref(&catalog.source.repository)
+        )
+    );
+    println!(
+        "{}",
+        locale().format("commit: {}", std::slice::from_ref(&catalog.source.commit))
+    );
+    println!(
+        "{}",
+        locale().format("devices: {}", &[format!("{}", catalog.devices.len())])
+    );
+    println!(
+        "{}",
+        locale().format(
+            "kinds: {}",
+            &[kinds
+                .into_iter()
+                .map(|(kind, count)| format!("{kind}={count}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+                .to_string()]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "upstream features: {}",
+            &[features
+                .into_iter()
+                .map(|(feature, count)| format!("{feature}={count}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+                .to_string()]
+        )
     );
     let mut matrix_families = BTreeMap::new();
     for device in &openrgb.devices {
@@ -354,14 +436,24 @@ fn upstream_stats(
             .entry(device.matrix_family.as_str())
             .or_insert(0_usize) += 1;
     }
-    println!("OpenRGB devices: {}", openrgb.devices.len());
     println!(
-        "OpenRGB matrix families: {}",
-        matrix_families
-            .into_iter()
-            .map(|(family, count)| format!("{family}={count}"))
-            .collect::<Vec<_>>()
-            .join(", ")
+        "{}",
+        locale().format(
+            "OpenRGB devices: {}",
+            &[format!("{}", openrgb.devices.len())]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "OpenRGB matrix families: {}",
+            &[matrix_families
+                .into_iter()
+                .map(|(family, count)| format!("{family}={count}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+                .to_string()]
+        )
     );
     let upstream_supported = irazer
         .devices
@@ -369,12 +461,24 @@ fn upstream_stats(
         .filter(|device| device.upstream_support.as_str() == "supported")
         .count();
     println!(
-        "iRazer devices: {} (upstream-supported={upstream_supported})",
-        irazer.devices.len()
+        "{}",
+        locale().format(
+            "iRazer devices: {} (upstream-supported={upstream_supported})",
+            &[
+                format!("{}", irazer.devices.len()),
+                format!("{}", upstream_supported)
+            ]
+        )
     );
     print_comparison(&catalog, &openrgb);
     print_irazer_comparison(&irazer, &openrgb);
-    println!("support basis: reusable upstream evidence; reconcile before enablement");
+    println!(
+        "{}",
+        locale().format(
+            "support basis: reusable upstream evidence; reconcile before enablement",
+            &[]
+        )
+    );
     Ok(())
 }
 
@@ -392,8 +496,9 @@ fn upstream_lookup(
     let openrgb_device = openrgb.find_usb(vid, pid);
     let irazer_device = irazer.find_usb(vid, pid);
     if openrazer_device.is_none() && openrgb_device.is_none() && irazer_device.is_none() {
-        return Err(format!(
-            "USB identity {vid:04x}:{pid:04x} is absent from all catalogs"
+        return Err(locale().format(
+            "USB identity {vid:04x}:{pid:04x} is absent from all catalogs",
+            &[format!("{:04x}", vid), format!("{:04x}", pid)],
         ));
     }
     if let Some(device) = openrazer_device {
@@ -428,10 +533,21 @@ fn upstream_assess(
     let assessment = assessments
         .iter()
         .find(|assessment| assessment.vid == vid && assessment.pid == pid)
-        .ok_or_else(|| format!("USB identity {vid:04x}:{pid:04x} is absent from all catalogs"))?;
+        .ok_or_else(|| {
+            locale().format(
+                "USB identity {vid:04x}:{pid:04x} is absent from all catalogs",
+                &[format!("{:04x}", vid), format!("{:04x}", pid)],
+            )
+        })?;
 
     println!("{}", format_evidence_assessment(assessment));
-    println!("note: readiness is a research triage result, not a RazeRS support claim");
+    println!(
+        "{}",
+        locale().format(
+            "note: readiness is a research triage result, not a RazeRS support claim",
+            &[]
+        )
+    );
     Ok(())
 }
 
@@ -446,11 +562,16 @@ fn upstream_assessment_list(
     let needs_research = count_readiness(&assessments, EvidenceReadiness::NeedsResearch);
     let single_source = count_readiness(&assessments, EvidenceReadiness::SingleSource);
     println!(
-        "assessment: total={}, corroborated={}, needs-research={}, single-source={}",
-        assessments.len(),
-        corroborated,
-        needs_research,
-        single_source
+        "{}",
+        locale().format(
+            "assessment: total={}, corroborated={}, needs-research={}, single-source={}",
+            &[
+                format!("{}", assessments.len()),
+                format!("{}", corroborated),
+                format!("{}", needs_research),
+                format!("{}", single_source)
+            ]
+        )
     );
     for assessment in assessments
         .iter()
@@ -458,7 +579,13 @@ fn upstream_assessment_list(
     {
         println!("{}", format_evidence_assessment(assessment));
     }
-    println!("note: readiness is a research triage result, not a RazeRS support claim");
+    println!(
+        "{}",
+        locale().format(
+            "note: readiness is a research triage result, not a RazeRS support claim",
+            &[]
+        )
+    );
     Ok(())
 }
 
@@ -503,31 +630,12 @@ fn format_evidence_assessment(assessment: &EvidenceAssessment) -> String {
         .map(|support| support.as_str())
         .unwrap_or("absent");
 
-    format!(
-        "{:04x}:{:04x}\treadiness={}\tsources={}\tname={}\tkind={}\tmatrix={}\tprotocol={}\topenrazer-features={}\tirazer-support={}",
-        assessment.vid,
-        assessment.pid,
-        assessment.readiness.as_str(),
-        sources,
-        assessment.name_agreement.as_str(),
-        assessment.kind_agreement.as_str(),
-        assessment.matrix_agreement.as_str(),
-        assessment.protocol_agreement.as_str(),
-        features,
-        irazer_support
-    )
+    locale().format("{:04x}:{:04x}\treadiness={}\tsources={}\tname={}\tkind={}\tmatrix={}\tprotocol={}\topenrazer-features={}\tirazer-support={}", &[format!("{:04x}", assessment.vid), format!("{:04x}", assessment.pid), assessment.readiness.as_str().to_string(), sources.to_string(), assessment.name_agreement.as_str().to_string(), assessment.kind_agreement.as_str().to_string(), assessment.matrix_agreement.as_str().to_string(), assessment.protocol_agreement.as_str().to_string(), features.to_string(), irazer_support.to_string()])
 }
 
 fn print_comparison(openrazer: &UpstreamCatalog, openrgb: &OpenRgbCatalog) {
     let comparison = openrazer.compare_openrgb(openrgb);
-    println!(
-        "cross-source: overlap={}, OpenRazer-only={}, OpenRGB-only={}, name-differences={}, matrix-differences={}",
-        comparison.overlap,
-        comparison.openrazer_only,
-        comparison.openrgb_only,
-        comparison.name_differences,
-        comparison.matrix_differences
-    );
+    println!("{}", locale().format("cross-source: overlap={}, OpenRazer-only={}, OpenRGB-only={}, name-differences={}, matrix-differences={}", &[format!("{}", comparison.overlap), format!("{}", comparison.openrazer_only), format!("{}", comparison.openrgb_only), format!("{}", comparison.name_differences), format!("{}", comparison.matrix_differences)]));
 }
 
 fn print_irazer_comparison(irazer: &IrazerCatalog, openrgb: &OpenRgbCatalog) {
@@ -559,94 +667,241 @@ fn print_irazer_comparison(irazer: &IrazerCatalog, openrgb: &OpenRgbCatalog) {
         .count();
 
     println!(
-        "iRazer/OpenRGB: overlap={}, iRazer-only={}, OpenRGB-only={}, protocol-differences={}",
-        overlap,
-        irazer_identities.len() - overlap,
-        openrgb_identities.len() - overlap,
-        protocol_differences
+        "{}",
+        locale().format(
+            "iRazer/OpenRGB: overlap={}, iRazer-only={}, OpenRGB-only={}, protocol-differences={}",
+            &[
+                format!("{}", overlap),
+                format!("{}", irazer_identities.len() - overlap),
+                format!("{}", openrgb_identities.len() - overlap),
+                format!("{}", protocol_differences)
+            ]
+        )
     );
 }
 
 fn print_upstream_device(device: &UpstreamDevice, catalog: &UpstreamCatalog) {
-    println!("name: {}", device.name);
-    println!("kind: {}", device.kind.as_str());
-    println!("usb: {:04x}:{:04x}", device.vid, device.pid);
     println!(
-        "upstream features: {}",
-        feature_names(&device.upstream_features)
+        "{}",
+        locale().format("name: {}", std::slice::from_ref(&device.name))
+    );
+    println!(
+        "{}",
+        locale().format("kind: {}", &[device.kind.as_str().to_string()])
+    );
+    println!(
+        "{}",
+        locale().format(
+            "usb: {:04x}:{:04x}",
+            &[format!("{:04x}", device.vid), format!("{:04x}", device.pid)]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "upstream features: {}",
+            &[feature_names(&device.upstream_features).to_string()]
+        )
     );
     if let Some([rows, columns]) = device.matrix {
-        println!("matrix: {rows}x{columns}");
+        println!(
+            "{}",
+            locale().format(
+                "matrix: {rows}x{columns}",
+                &[format!("{}", rows), format!("{}", columns)]
+            )
+        );
     }
     if let Some(max_dpi) = device.max_dpi {
-        println!("max dpi: {max_dpi}");
+        println!(
+            "{}",
+            locale().format("max dpi: {max_dpi}", &[format!("{}", max_dpi)])
+        );
     }
     if !device.poll_rates_hz.is_empty() {
         println!(
-            "poll rates: {} Hz",
-            device
-                .poll_rates_hz
-                .iter()
-                .map(u32::to_string)
-                .collect::<Vec<_>>()
-                .join(", ")
+            "{}",
+            locale().format(
+                "poll rates: {} Hz",
+                &[device
+                    .poll_rates_hz
+                    .iter()
+                    .map(u32::to_string)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+                    .to_string()]
+            )
         );
     }
-    println!("upstream methods: {}", device.methods.join(", "));
     println!(
-        "evidence: {}/{}@{}:{}",
-        catalog.source.repository,
-        device.source_path,
-        &catalog.source.commit[..12],
-        device.source_symbol
+        "{}",
+        locale().format(
+            "upstream methods: {}",
+            &[device.methods.join(", ").to_string()]
+        )
     );
-    println!("RazeRS status: upstream evidence; apply the evidence policy before enablement");
+    println!(
+        "{}",
+        locale().format(
+            "evidence: {}/{}@{}:{}",
+            &[
+                catalog.source.repository.to_string(),
+                device.source_path.to_string(),
+                catalog.source.commit[..12].to_string(),
+                device.source_symbol.to_string()
+            ]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "RazeRS status: upstream evidence; apply the evidence policy before enablement",
+            &[]
+        )
+    );
 }
 
 fn print_openrgb_device(device: &OpenRgbDevice, catalog: &OpenRgbCatalog) {
-    println!("name: {}", device.name);
-    println!("kind: {}", device.kind.as_str());
-    println!("usb: {:04x}:{:04x}", device.vid, device.pid);
-    println!("matrix family: {}", device.matrix_family.as_str());
-    println!("transaction id: 0x{:02x}", device.transaction_id);
-    println!("matrix: {}x{}", device.matrix[0], device.matrix[1]);
+    println!(
+        "{}",
+        locale().format("name: {}", std::slice::from_ref(&device.name))
+    );
+    println!(
+        "{}",
+        locale().format("kind: {}", &[device.kind.as_str().to_string()])
+    );
+    println!(
+        "{}",
+        locale().format(
+            "usb: {:04x}:{:04x}",
+            &[format!("{:04x}", device.vid), format!("{:04x}", device.pid)]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "matrix family: {}",
+            &[device.matrix_family.as_str().to_string()]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "transaction id: 0x{:02x}",
+            &[format!("{:02x}", device.transaction_id)]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "matrix: {}x{}",
+            &[
+                format!("{}", device.matrix[0]),
+                format!("{}", device.matrix[1])
+            ]
+        )
+    );
     if !device.zones.is_empty() {
-        println!("zone symbols: {}", device.zones.join(", "));
+        println!(
+            "{}",
+            locale().format("zone symbols: {}", &[device.zones.join(", ").to_string()])
+        );
     }
     if let Some(layout) = &device.layout {
-        println!("layout symbol: {layout}");
+        println!(
+            "{}",
+            locale().format("layout symbol: {layout}", std::slice::from_ref(layout))
+        );
     }
     println!(
-        "evidence: {}/{}@{}:{} ({})",
-        catalog.source.repository,
-        device.source_path,
-        &catalog.source.commit[..12],
-        device.source_symbol,
-        device.pid_symbol
+        "{}",
+        locale().format(
+            "evidence: {}/{}@{}:{} ({})",
+            &[
+                catalog.source.repository.to_string(),
+                device.source_path.to_string(),
+                catalog.source.commit[..12].to_string(),
+                device.source_symbol.to_string(),
+                device.pid_symbol.to_string()
+            ]
+        )
     );
-    println!("RazeRS status: upstream evidence; apply the evidence policy before enablement");
+    println!(
+        "{}",
+        locale().format(
+            "RazeRS status: upstream evidence; apply the evidence policy before enablement",
+            &[]
+        )
+    );
 }
 
 fn print_irazer_device(device: &IrazerDevice, catalog: &IrazerCatalog) {
-    println!("name: {}", device.name);
-    println!("kind: {}", device.kind.as_str());
-    println!("usb: {:04x}:{:04x}", device.vid, device.pid);
-    println!("source id: {}", device.source_id);
     println!(
-        "upstream support claim: {}",
-        device.upstream_support.as_str()
+        "{}",
+        locale().format("name: {}", std::slice::from_ref(&device.name))
     );
-    println!("capability labels: {}", device.capability_labels.join(", "));
-    println!("matrix family: {}", device.matrix_family.as_str());
-    println!("transaction id: 0x{:02x}", device.transaction_id);
     println!(
-        "evidence: {}/{}@{}:{}",
-        catalog.source.repository,
-        device.source_path,
-        &catalog.source.commit[..12],
-        device.source_symbol
+        "{}",
+        locale().format("kind: {}", &[device.kind.as_str().to_string()])
     );
-    println!("RazeRS status: upstream evidence; apply the evidence policy before enablement");
+    println!(
+        "{}",
+        locale().format(
+            "usb: {:04x}:{:04x}",
+            &[format!("{:04x}", device.vid), format!("{:04x}", device.pid)]
+        )
+    );
+    println!(
+        "{}",
+        locale().format("source id: {}", std::slice::from_ref(&device.source_id))
+    );
+    println!(
+        "{}",
+        locale().format(
+            "upstream support claim: {}",
+            &[device.upstream_support.as_str().to_string()]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "capability labels: {}",
+            &[device.capability_labels.join(", ").to_string()]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "matrix family: {}",
+            &[device.matrix_family.as_str().to_string()]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "transaction id: 0x{:02x}",
+            &[format!("{:02x}", device.transaction_id)]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "evidence: {}/{}@{}:{}",
+            &[
+                catalog.source.repository.to_string(),
+                device.source_path.to_string(),
+                catalog.source.commit[..12].to_string(),
+                device.source_symbol.to_string()
+            ]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "RazeRS status: upstream evidence; apply the evidence policy before enablement",
+            &[]
+        )
+    );
 }
 
 fn feature_names(features: &[UpstreamFeature]) -> String {
@@ -676,7 +931,10 @@ fn devices(directory: &Path) -> Result<(), String> {
         .transpose()?;
     let interfaces = enumerate_razer().map_err(|error| error.to_string())?;
     if interfaces.is_empty() {
-        println!("no Razer HID interfaces detected");
+        println!(
+            "{}",
+            locale().format("no Razer HID interfaces detected", &[])
+        );
         return Ok(());
     }
 
@@ -732,34 +990,27 @@ fn print_interface(
         .map(|device| device.name.as_str())
         .unwrap_or("unknown");
 
-    println!(
-        "{:04x}:{:04x}\tinterface={}\tusage={:04x}:{:04x}\tcollection={}\taccess=descriptor-only\tproduct={}\tserial={}\tregistry={}\topenrazer={}\topenrgb={}\tirazer={}",
-        interface.vendor_id,
-        interface.product_id,
-        interface.interface_number,
-        interface.usage_page,
-        interface.usage,
-        interface.collection_kind().as_str(),
-        interface.product.as_deref().unwrap_or("unknown"),
-        if interface.serial_number_present {
+    println!("{}", locale().format("{:04x}:{:04x}\tinterface={}\tusage={:04x}:{:04x}\tcollection={}\taccess=descriptor-only\tproduct={}\tserial={}\tregistry={}\topenrazer={}\topenrgb={}\tirazer={}", &[format!("{:04x}", interface.vendor_id), format!("{:04x}", interface.product_id), format!("{}", interface.interface_number), format!("{:04x}", interface.usage_page), format!("{:04x}", interface.usage), interface.collection_kind().as_str().to_string(), interface.product.as_deref().unwrap_or("unknown").to_string(), (if interface.serial_number_present {
             "present-redacted"
         } else {
             "absent"
-        },
-        registry_match,
-        openrazer_match,
-        openrgb_match,
-        irazer_match
-    );
+        }).to_string(), registry_match.to_string(), openrazer_match.to_string(), openrgb_match.to_string(), irazer_match.to_string()]));
 }
 
 fn parse_usb_identity(value: &str) -> Result<(u16, u16), String> {
-    let (vid, pid) = value
-        .split_once(':')
-        .ok_or_else(|| format!("'{value}' must use VID:PID hexadecimal form"))?;
+    let (vid, pid) = value.split_once(':').ok_or_else(|| {
+        locale().format(
+            "'{value}' must use VID:PID hexadecimal form",
+            &[value.to_string()],
+        )
+    })?;
     let parse = |part: &str| {
-        u16::from_str_radix(part.strip_prefix("0x").unwrap_or(part), 16)
-            .map_err(|_| format!("'{value}' must use VID:PID hexadecimal form"))
+        u16::from_str_radix(part.strip_prefix("0x").unwrap_or(part), 16).map_err(|_| {
+            locale().format(
+                "'{value}' must use VID:PID hexadecimal form",
+                &[value.to_string()],
+            )
+        })
     };
     Ok((parse(vid)?, parse(pid)?))
 }
@@ -778,14 +1029,56 @@ fn report_decode(encoded: &str) -> Result<(), String> {
     let bytes = parse_hex(encoded)?;
     let report = Report90::decode(&bytes).map_err(|error| error.to_string())?;
 
-    println!("status: 0x{:02x}", report.status);
-    println!("transaction-id: 0x{:02x}", report.transaction_id);
-    println!("remaining-packets: {}", report.remaining_packets);
-    println!("protocol-type: 0x{:02x}", report.protocol_type);
-    println!("command-class: 0x{:02x}", report.command_class);
-    println!("command-id: 0x{:02x}", report.command_id);
-    println!("arguments: {}", format_hex(report.arguments()));
-    println!("reserved: 0x{:02x}", report.reserved);
+    println!(
+        "{}",
+        locale().format("status: 0x{:02x}", &[format!("{:02x}", report.status)])
+    );
+    println!(
+        "{}",
+        locale().format(
+            "transaction-id: 0x{:02x}",
+            &[format!("{:02x}", report.transaction_id)]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "remaining-packets: {}",
+            &[format!("{}", report.remaining_packets)]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "protocol-type: 0x{:02x}",
+            &[format!("{:02x}", report.protocol_type)]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "command-class: 0x{:02x}",
+            &[format!("{:02x}", report.command_class)]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "command-id: 0x{:02x}",
+            &[format!("{:02x}", report.command_id)]
+        )
+    );
+    println!(
+        "{}",
+        locale().format(
+            "arguments: {}",
+            &[format_hex(report.arguments()).to_string()]
+        )
+    );
+    println!(
+        "{}",
+        locale().format("reserved: 0x{:02x}", &[format!("{:02x}", report.reserved)])
+    );
     Ok(())
 }
 
@@ -795,7 +1088,7 @@ fn parse_byte(value: &str) -> Result<u8, String> {
     } else {
         value.parse()
     };
-    parsed.map_err(|_| format!("'{value}' is not a byte value"))
+    parsed.map_err(|_| locale().format("'{value}' is not a byte value", &[value.to_string()]))
 }
 
 fn parse_hex(value: &str) -> Result<Vec<u8>, String> {
@@ -804,17 +1097,24 @@ fn parse_hex(value: &str) -> Result<Vec<u8>, String> {
         .filter(|character| !character.is_ascii_whitespace() && !matches!(character, ':' | '-'))
         .collect::<String>();
     let compact = compact.strip_prefix("0x").unwrap_or(&compact);
+    if !compact.is_ascii() {
+        return Err(locale()
+            .text("hex input must contain ASCII digits only")
+            .into());
+    }
     if compact.len() % 2 != 0 {
-        return Err("hex input must contain an even number of digits".into());
+        return Err(locale()
+            .text("hex input must contain an even number of digits")
+            .into());
     }
 
     (0..compact.len())
         .step_by(2)
         .map(|index| {
             u8::from_str_radix(&compact[index..index + 2], 16).map_err(|_| {
-                format!(
+                locale().format(
                     "invalid hex byte '{}': position {index}",
-                    &compact[index..index + 2]
+                    &[compact[index..index + 2].to_string(), format!("{}", index)],
                 )
             })
         })

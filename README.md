@@ -1,5 +1,7 @@
 # RazeRS
 
+English · [简体中文](README.zh-CN.md) · [Documentation / 文档站](https://yangyus8.top/razers/)
+
 [![CI](https://github.com/YangYuS8/razers/actions/workflows/ci.yml/badge.svg)](https://github.com/YangYuS8/razers/actions/workflows/ci.yml)
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)](LICENSE)
 
@@ -40,6 +42,7 @@ their respective owners.
 | `razers-app` | Cross-platform, user-facing desktop application |
 | `razers-agent` | Private local device service and descriptor discovery |
 | `razers-ipc` | Versioned JSON-RPC messages shared by the Agent and clients |
+| `razers-i18n` | Embedded English/Chinese catalogs and shared language selection |
 | `razers-protocol-core` | Safe 90-byte report encoding, decoding, and CRC validation |
 | `razers-protocol-razer90` | Timed request-response exchange, validation, and explicit busy policy |
 | `razers-transport` | OS-independent report I/O trait and deterministic replay transport |
@@ -62,6 +65,7 @@ and the libudev development files (`libudev-dev` on Debian/Ubuntu; provided by
 ```bash
 cargo test --workspace
 cargo run -p razers-app
+cargo run -p razers-app -- --lang zh-CN
 cargo run -p razers-cli -- registry validate devices
 cargo run -p razers-cli -- upstream validate
 cargo run -p razers-cli -- upstream stats
@@ -97,6 +101,18 @@ cargo run -p razers-cli -- report decode "$packet_hex"
 
 Run `cargo run -p razers-cli -- help` for the complete command list.
 
+The app and CLI follow the system language, with English fallback. The desktop
+language selector switches immediately and saves your choice. Use `--lang en`,
+`--lang zh-CN`, or `--lang auto` to override it; `RAZERS_LANG` also controls automatic
+selection. A bundled Chinese font works offline on all supported desktop platforms.
+Protocol fields and original diagnostic details are intentionally not translated.
+
+Read the [English handbook](https://yangyus8.top/razers/en/),
+[中文手册](https://yangyus8.top/razers/zh-CN/), and
+[Rust API reference](https://yangyus8.top/razers/api/). Both mdBooks and rustdoc
+are built and link-checked together on every PR, then deployed to GitHub Pages
+from `main`; see [local documentation development](docs/contributing.md).
+
 ## Current status
 
 Milestone 0 is complete, and descriptor-only enumeration begins Milestone 1:
@@ -115,6 +131,8 @@ Milestone 0 is complete, and descriptor-only enumeration begins Milestone 1:
 - [x] Field-level evidence assessment, candidate shortlist, and conflict queue
 - [x] Read-only desktop device overview with explicit privacy and support states
 - [x] Private child Agent and versioned local JSON-RPC boundary
+- [x] English/Chinese UI, CLI, offline fonts, and persistent language selection
+- [x] Bilingual mdBook handbook and rustdoc with automated GitHub Pages deployment
 - [ ] Safe, read-only identification of the first physical device
 - [ ] Capability-driven desktop UI
 
@@ -127,6 +145,8 @@ See [`docs/provenance.md`](docs/provenance.md) and the `evidence` entries in eac
 device manifest. The criteria for turning that evidence into experimental support
 are documented in [`docs/evidence-policy.md`](docs/evidence-policy.md). Code in this
 repository is licensed under GPL-2.0-or-later; see [`LICENSE`](LICENSE).
+The bundled Noto Sans SC font is separately licensed under the SIL Open Font
+License 1.1; see [font provenance](assets/fonts/README.md).
 
 The application experience is governed by
 [`docs/product-principles.md`](docs/product-principles.md), including the permanent

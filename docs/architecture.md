@@ -72,6 +72,11 @@ a stated platform and firmware. See [`evidence-policy.md`](evidence-policy.md).
 
 ## Concurrency model
 
+`razers-i18n` provides offline English/Chinese presentation at the application and
+CLI boundaries. Locale selection never changes transport bytes, IPC method names,
+schema enums, source evidence, or hardware policy. User-readable text is translated
+after receiving the Agent's structured response.
+
 Vendor request-response exchanges are serialized per physical connection. The future
 Agent may be asynchronous, but each connection actor owns a synchronous `ReportIo`
 backend. This prevents one command from consuming another command's response and

@@ -17,12 +17,27 @@ commit messages:
 - documentation and maintenance-only commits remain in the log but do not create
   a release by themselves.
 
-Merging the generated Release PR is the only manual release gate. The same workflow
+Merging the generated Release PR is the maintainer-owned release gate; users do not
+need to choose release timing. The same workflow
 then creates a `vX.Y.Z` tag and prerelease and builds for Linux x86-64 and ARM64,
 Windows x86-64, and macOS x86-64 and ARM64. Each deterministic archive contains the
 `razers` desktop application, its sibling `razers-agent`, the `razersctl` developer
 CLI, and a SHA-256 file. The workspace is intentionally git-only and is not published
 to crates.io during the pre-alpha phase.
+
+Archives also include English/Chinese READMEs and the bundled font's OFL license
+and provenance notice. Translation catalogs and the Chinese font are embedded, so
+the installed application needs no translation downloads.
+
+## Documentation publishing
+
+The `Documentation` workflow builds both mdBooks and workspace library rustdoc,
+checks matching chapter lists and generated local links, and rejects rustdoc
+warnings on every PR. Pushes to `main` deploy the same output to GitHub Pages using
+OIDC and the `github-pages` environment. Pull requests never receive Pages write
+permission. This is the latest development documentation, not a version archive;
+`build-info.json` records the source commit, workspace version, and mdBook version.
+mdBook is pinned in `tools/docs-requirements.txt`.
 
 If an artifact runner has a transient failure, rerun the failed jobs. The workflow
 can also be dispatched with an existing `vX.Y.Z` tag to rebuild and replace that

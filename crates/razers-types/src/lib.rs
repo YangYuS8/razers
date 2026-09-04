@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 //! Shared, transport-independent types used across the RazeRS workspace.
+//!
+//! RazeRS 工作区共用的类型，不依赖具体传输方式。
 
 use std::{fmt, str::FromStr};
 
@@ -8,16 +10,22 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 /// Stable identifier for a product-level device descriptor.
+///
+/// 产品级设备描述的稳定标识。
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
 pub struct DeviceId(String);
 
 /// Stable identifier for one physical connection belonging to a product.
+///
+/// 产品某个物理连接的稳定标识。
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
 pub struct ConnectionId(String);
 
 /// Why an identifier could not be accepted.
+///
+/// 标识被拒绝的原因。
 #[derive(Clone, Debug, Error, Eq, PartialEq)]
 #[error("invalid {kind} identifier '{value}': {reason}")]
 pub struct InvalidIdentifier {
@@ -28,11 +36,15 @@ pub struct InvalidIdentifier {
 
 impl DeviceId {
     /// Parse a namespaced product identifier such as `razer.basilisk-v3`.
+    ///
+    /// 解析带命名空间的产品标识，例如 `razer.basilisk-v3`。
     pub fn new(value: impl Into<String>) -> Result<Self, InvalidIdentifier> {
         validate_identifier("device", value.into(), true).map(Self)
     }
 
     /// Return the identifier as a string slice.
+    ///
+    /// 返回标识的字符串切片。
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -40,11 +52,15 @@ impl DeviceId {
 
 impl ConnectionId {
     /// Parse a connection identifier such as `wired` or `receiver-slot-1`.
+    ///
+    /// 解析连接标识，例如 `wired` 或 `receiver-slot-1`。
     pub fn new(value: impl Into<String>) -> Result<Self, InvalidIdentifier> {
         validate_identifier("connection", value.into(), false).map(Self)
     }
 
     /// Return the identifier as a string slice.
+    ///
+    /// 返回标识的字符串切片。
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -127,6 +143,8 @@ identifier_impls!(DeviceId);
 identifier_impls!(ConnectionId);
 
 /// Confidence level for product or capability support.
+///
+/// 产品或能力支持的可信程度。
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum SupportStatus {
@@ -138,6 +156,8 @@ pub enum SupportStatus {
 }
 
 /// Safety class assigned to every protocol command.
+///
+/// 每条协议命令的安全风险等级。
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum CommandRisk {
@@ -149,6 +169,8 @@ pub enum CommandRisk {
 }
 
 /// Where a setting is expected to persist.
+///
+/// 设置预期保存的位置与持久性。
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum PersistenceScope {

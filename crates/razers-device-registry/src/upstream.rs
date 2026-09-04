@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 //! Read-only, source-derived device facts that are not RazeRS support claims.
+//!
+//! 来自上游源码的只读设备事实，不等同于 RazeRS 的支持承诺。
 
 use std::{
     collections::BTreeSet,
@@ -256,6 +258,8 @@ impl UpstreamSupportClaim {
 }
 
 /// One upstream implementation contributing facts about a USB identity.
+///
+/// 为某个 USB 标识提供事实的一个上游实现。
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum EvidenceSource {
     OpenRazer,
@@ -274,6 +278,8 @@ impl EvidenceSource {
 }
 
 /// Whether independent sources can be compared for one fact and agree on it.
+///
+/// 独立来源对某项事实是否可比、是否一致。
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum EvidenceAgreement {
     NotComparable,
@@ -294,6 +300,8 @@ impl EvidenceAgreement {
 /// Review readiness derived from source coverage and recorded disagreements.
 ///
 /// This is a research aid, not an automatic support or live-I/O decision.
+///
+/// 按来源覆盖与已记录差异评估研究就绪程度；仅辅助研究，不自动决定设备支持或实时读写权限。
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum EvidenceReadiness {
     Corroborated,
@@ -312,6 +320,8 @@ impl EvidenceReadiness {
 }
 
 /// Field-level assessment for one USB identity across all imported catalogs.
+///
+/// 跨所有已导入目录，对某个 USB 标识做字段级评估。
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EvidenceAssessment {
     pub vid: u16,
@@ -327,6 +337,8 @@ pub struct EvidenceAssessment {
 }
 
 /// Reconcile source coverage without silently selecting any disputed value.
+///
+/// 核对来源覆盖情况，不会擅自选择有争议的值。
 pub fn assess_evidence(
     openrazer: &UpstreamCatalog,
     openrgb: &OpenRgbCatalog,

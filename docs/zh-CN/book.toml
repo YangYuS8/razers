@@ -1,0 +1,19 @@
+[book]
+title = "RazeRS 使用手册"
+authors = ["RazeRS contributors"]
+language = "zh-CN"
+src = "."
+
+[build]
+create-missing = false
+build-dir = "../../target/book/zh-CN"
+
+[output.html]
+site-url = "/razers/zh-CN/"
+git-repository-url = "https://github.com/YangYuS8/razers"
+edit-url-template = "https://github.com/YangYuS8/razers/edit/main/docs/zh-CN/{path}"
+additional-js = ["../theme/language.js", "../theme/chinese-search.js"]
+additional-css = ["../theme/custom.css"]
+
+[output.html.search]
+enable = false

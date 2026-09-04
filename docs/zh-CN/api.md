@@ -1,0 +1,11 @@
+# Rust API 参考
+
+打开[自动生成的 rustdoc 索引](../api/index.html)查看工作区 crate。
+API 处于预 alpha，minor 版本之间可能变化。Rust 符号、协议标识保持原样，双语说明解释其用途。
+
+`razers_types` 提供标识与风险级别；`razers_device_registry` 负责清单和证据解析；
+`razers_protocol_core` 提供 90 字节编解码；`razers_transport` 提供回放；
+`razers_protocol_razer90` 实现经过校验的交换；`razers_ipc` 定义本地契约；
+`razers_agent` 和 `razers_app` 负责进程边界；`razers_i18n` 负责展示层翻译。
+
+rustdoc 与手册从同一提交生成，警告视为错误。不包含依赖库文档，也不代表实机验证。

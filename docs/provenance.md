@@ -26,13 +26,13 @@ Relevant upstream locations:
 
 ### Generated evidence catalog
 
-[`data/upstream/openrazer-devices.toml`](../data/upstream/openrazer-devices.toml)
+[`data/upstream/openrazer-devices.toml`](https://github.com/YangYuS8/razers/blob/main/data/upstream/openrazer-devices.toml)
 contains 267 USB identities extracted from the seven concrete device modules under
 `daemon/openrazer_daemon/hardware`. The deterministic importer preserves each source
 path and class symbol along with OpenRazer's advertised methods, matrix dimensions,
 DPI limits, polling-rate lists, and conservative feature hints.
 
-The importer at [`tools/import_openrazer.py`](../tools/import_openrazer.py) accepts
+The importer at [`tools/import_openrazer.py`](https://github.com/YangYuS8/razers/blob/main/tools/import_openrazer.py) accepts
 only a Git checkout at the pinned commit above. The Rust catalog parser rejects
 duplicate VID/PID pairs, malformed provenance, invalid dimensions, and invalid
 numeric data. This makes upstream refreshes reviewable instead of silently consuming
@@ -86,7 +86,7 @@ Lighting metadata is imported from OpenRGB commit:
 7fed68ccf1a2413b9bd38a70e266b12cb2d59c26
 ```
 
-[`data/upstream/openrgb-devices.toml`](../data/upstream/openrgb-devices.toml)
+[`data/upstream/openrgb-devices.toml`](https://github.com/YangYuS8/razers/blob/main/data/upstream/openrgb-devices.toml)
 contains the 196 entries referenced by OpenRGB's Razer device table. The importer
 preserves the matrix protocol family, transaction ID, matrix dimensions, zone
 symbols, PID symbol, and optional keyboard layout symbol from
@@ -109,7 +109,7 @@ The iRazer catalog is imported from commit:
 7cc856ddd26edd9523a12a540b6d95a4ea3a54c4
 ```
 
-[`data/upstream/irazer-devices.toml`](../data/upstream/irazer-devices.toml)
+[`data/upstream/irazer-devices.toml`](https://github.com/YangYuS8/razers/blob/main/data/upstream/irazer-devices.toml)
 contains all 192 entries in iRazer's
 [`DeviceCatalog.swift`](https://github.com/hanley-tech/iRazer/blob/7cc856ddd26edd9523a12a540b6d95a4ea3a54c4/Sources/iRazer/DeviceCatalog.swift).
 The deterministic importer preserves USB identities, category, capability labels,
@@ -121,3 +121,10 @@ disagreements at these pinned commits. iRazer additionally records the Nommo V2 
 Nommo V2, and Nommo V2 X. An iRazer `supported` label remains attributed to iRazer,
 but it is a meaningful input to RazeRS experimental-support decisions rather than a
 claim that must be discarded until repeated locally.
+
+## Bundled Chinese font
+
+Noto Sans SC is embedded, unmodified, from `notofonts/noto-cjk` commit
+`f8d157532fbfaeda587e826d4cd5b21a49186f7c`, under SIL Open Font License 1.1.
+It is not covered by the code's GPL license. The [font notice](https://github.com/YangYuS8/razers/blob/main/assets/fonts/README.md)
+records the source path and SHA-256; release archives retain the original OFL.

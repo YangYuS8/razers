@@ -6,6 +6,7 @@ members = [
     "crates/razers-cli",
     "crates/razers-device-registry",
     "crates/razers-ipc",
+    "crates/razers-i18n",
     "crates/razers-protocol-core",
     "crates/razers-protocol-razer90",
     "crates/razers-transport",
@@ -24,10 +25,12 @@ authors = ["YangYuS8 and RazeRS contributors"]
 [workspace.dependencies]
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.145"
+sys-locale = "0.3.2"
 thiserror = "2.0.20"
 toml = "1.1.5"
 hidapi = "2.6.7"
-eframe = { version = "0.32.3", default-features = false, features = ["accesskit", "default_fonts", "glow", "wayland", "x11"] }
+eframe = { version = "0.32.3", default-features = false, features = ["accesskit", "default_fonts", "glow", "wayland", "x11", "persistence"] }
+razers-i18n = { path = "crates/razers-i18n" }
 razers-device-registry = { path = "crates/razers-device-registry" }
 razers-ipc = { path = "crates/razers-ipc" }
 razers-protocol-core = { path = "crates/razers-protocol-core" }
