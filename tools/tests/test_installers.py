@@ -57,6 +57,12 @@ class InstallerConfiguration(unittest.TestCase):
             self.assertIn('"$startdir/payload/usr"', recipe)
             self.assertNotIn("install=", recipe)
 
+    def test_linux_declares_libraries_loaded_only_when_the_gui_starts(self):
+        config = packager_config("x86_64-unknown-linux-gnu", "0.4.0", Path("out"))
+        self.assertTrue({"libxkbcommon-x11-0", "libx11-xcb1", "libwayland-egl1"}
+                        <= set(config["deb"]["depends"]))
+        self.assertIn("'libxkbcommon-x11'", arch_recipe("0.4.0", "x86_64-unknown-linux-gnu"))
+
     def test_no_silent_version_coercion_or_path_injection(self):
         for version in ["v0.4.0", "0.4", "0.04.0", "0.4.0-beta.1", "0.4.0+build", "../0.4.0", "0.4.0\n"]:
             with self.subTest(version=version), self.assertRaises(ValueError):

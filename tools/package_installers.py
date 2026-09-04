@@ -29,12 +29,12 @@ TARGETS = {
     "aarch64-apple-darwin": ("dmg",),
 }
 DEB_DEPENDS = [
-    "libc6 (>= 2.39)", "libgcc-s1", "libudev1", "libxkbcommon0",
-    "libwayland-client0", "libegl1", "libgl1", "libx11-6", "libxcb1",
+    "libc6 (>= 2.39)", "libgcc-s1", "libudev1", "libxkbcommon0", "libxkbcommon-x11-0",
+    "libwayland-client0", "libwayland-egl1", "libegl1", "libgl1", "libx11-6", "libx11-xcb1", "libxcb1",
     "libxcursor1", "libxrandr2", "libxi6",
 ]
 ARCH_DEPENDS = [
-    "glibc>=2.39", "gcc-libs", "systemd-libs", "libxkbcommon", "wayland",
+    "glibc>=2.39", "gcc-libs", "systemd-libs", "libxkbcommon", "libxkbcommon-x11", "wayland",
     "libglvnd", "libx11", "libxcb", "libxcursor", "libxrandr", "libxi",
 ]
 

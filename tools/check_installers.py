@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 from contextlib import contextmanager
+import ctypes
 import hashlib
 import io
 import json
@@ -39,8 +40,17 @@ def verify_checksum(artifact: Path) -> None:
             f"checksum or checksum filename mismatch: {artifact.name}")
 
 
-def smoke_binaries(directory: Path, version: str) -> None:
+def smoke_binaries(directory: Path, version: str, *, desktop_libraries: bool = True) -> None:
     """Both real executables answer agent.info, without enumerating/opening HID."""
+    if sys.platform.startswith("linux") and desktop_libraries:
+        # winit/glutin load these at GUI startup, so ldd and agent.info alone do
+        # not detect missing desktop dependencies. Load only OS libraries; no
+        # display connection or attached peripheral is needed.
+        for library in ["libudev.so.1", "libxkbcommon.so.0", "libxkbcommon-x11.so.0",
+                        "libwayland-client.so.0", "libwayland-egl.so.1", "libEGL.so.1", "libGL.so.1",
+                        "libX11.so.6", "libX11-xcb.so.1", "libxcb.so.1", "libXcursor.so.1",
+                        "libXrandr.so.2", "libXi.so.6"]:
+            ctypes.CDLL(library)
     suffix = ".exe" if sys.platform == "win32" else ""
     request = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "agent.info",
                           "params": {"protocol_version": 1}}) + "\n"
@@ -160,10 +170,11 @@ def inspect_all(target: str, output: Path) -> None:
             verify_checksum(artifact)
             if extension == "deb":
                 inspect_deb(artifact, target, version, work / "deb")
-                smoke_binaries(work / "deb/usr/bin", version)
+                # apt has not installed the declared desktop dependencies yet.
+                smoke_binaries(work / "deb/usr/bin", version, desktop_libraries=False)
             elif extension == "pkg.tar.zst":
                 inspect_arch(artifact, target, version, work / "arch")
-                smoke_binaries(work / "arch/usr/bin", version)
+                smoke_binaries(work / "arch/usr/bin", version, desktop_libraries=False)
                 for path in (work / "deb/usr").rglob("*"):
                     if path.is_file():
                         other = work / "arch" / path.relative_to(work / "deb")
