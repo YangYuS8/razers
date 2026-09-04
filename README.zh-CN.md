@@ -18,7 +18,7 @@ RazeRS 是实验性的跨平台、用户态雷蛇外设管理项目，以 Rust �
 
 从 [Releases](https://github.com/YangYuS8/razers/releases) 下载对应系统归档，
 解压后保持 `razers`、`razers-agent`、`razersctl` 同目录，运行 `razers`。
-安装要求与安全提示见[快速开始](https://yangyus8.top/razers/zh-CN/getting-started.html)。
+安装要求与安全提示见[快速开始](https://yangyus8.top/razers/zh-CN/getting-started/)。
 
 ## 从源码开始
 
@@ -39,7 +39,12 @@ CLI 标识与协议保持不变，脚本可用 `--lang en` 固定输出语言。
 
 CI 验证测试、最低 Rust 版本、中英文目录与文档；Actions 自动维护版本、变更日志、
 依赖更新、五平台发行包和 GitHub Pages。发布时机由维护流程决定，硬件能力成熟前保留预发布。
+双语 Starlight 手册与 rustdoc 在每个 PR 检查翻译同步、链接、锚点、搜索及移动端导航，
+由 `main` 自动部署。文档依赖自动提出升级 PR，patch 更新可在必需检查通过后合并。
 
 代码使用 GPL-2.0-or-later，见 [LICENSE](LICENSE)；内置中文字体保持 SIL OFL 1.1，
 见[字体来源](assets/fonts/README.md)。项目独立于 Razer Inc.，不代表其官方立场。
-贡献请先阅读[安全](docs/zh-CN/safety.md)和[证据政策](docs/zh-CN/evidence-policy.md)。
+贡献请先阅读[安全](docs/src/content/docs/zh-CN/safety.md)和[证据政策](docs/src/content/docs/zh-CN/evidence-policy.md)。
+
+欢迎提问和提出功能建议，贡献上游证据不要求持有硬件。
+请参阅[支持指南](SUPPORT.md)与[行为准则](CODE_OF_CONDUCT.md)。

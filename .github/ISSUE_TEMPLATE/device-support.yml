@@ -1,11 +1,13 @@
-name: Device support
-description: Contribute evidence or request support for a specific device
+name: Device hardware report / 设备实测报告
+description: Share actual RazeRS hardware results; use Upstream evidence if you do not own the device.
 title: "device: "
 labels: ["device-support"]
 body:
   - type: markdown
     attributes:
       value: |
+        Use this form for actual hardware results, not as a prerequisite to contribute.
+        没有设备也能贡献：上游资料请使用 Upstream evidence 表单。
         Do not post serial numbers or unredacted packet captures. Support is verified per connection, platform, firmware, and capability.
   - type: input
     id: model

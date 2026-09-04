@@ -1,2 +1,0 @@
-# Fixed documentation generator; the Documentation workflow installs this version.
-mdbook = "0.5.4"

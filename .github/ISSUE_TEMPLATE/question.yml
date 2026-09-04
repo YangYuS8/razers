@@ -1,0 +1,30 @@
+name: Question or suggestion / 提问或建议
+description: Ask for help, suggest a feature, or report a documentation or translation problem.
+title: 'discussion: '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read the handbook first. Hardware ownership is not required. Security reports must be private.
+        请先阅读手册；无需持有硬件。安全问题请走私密报告渠道。
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Topic / 类型
+      options:
+        - Help / 使用帮助
+        - Feature suggestion / 功能建议
+        - Documentation or translation / 文档或翻译
+    validations:
+      required: true
+  - type: textarea
+    id: need
+    attributes:
+      label: What are you trying to achieve? / 你想完成什么？
+      description: Describe the goal and relevant context, not only a proposed implementation / 请描述目标与背景，不只是实现方案
+    validations:
+      required: true
+  - type: textarea
+    id: attempts
+    attributes:
+      label: What have you tried or read? / 已尝试什么、阅读了哪些文档？

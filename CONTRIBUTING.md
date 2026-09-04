@@ -2,7 +2,7 @@
 
 Thank you for helping build safe, verifiable support for Razer hardware.
 
-[中文贡献指南](docs/zh-CN/contributing.md) · [Online handbook](https://yangyus8.top/razers/en/)
+[中文贡献指南](docs/src/content/docs/zh-CN/contributing.md) · [Online handbook](https://yangyus8.top/razers/en/)
 
 ## Development setup
 
@@ -19,13 +19,14 @@ All Rust source files should carry `SPDX-License-Identifier: GPL-2.0-or-later`.
 Document the origin of protocol facts and device metadata using a pinned upstream
 commit. Do not copy code from an incompatible license.
 Use Conventional Commit subjects so the automated Release PR can derive versions
-and changelog sections; see [`docs/releases.md`](docs/releases.md).
+and changelog sections; see [`docs/src/content/docs/en/releases.md`](docs/src/content/docs/en/releases.md).
 
 User-facing changes must update both embedded language catalogs, with matching
 positional placeholders. Update the corresponding English and Chinese handbook
-chapters together. See [localization](docs/localization.md) and
-[building the mdBook + rustdoc site](docs/contributing.md). The docs workflow
-checks chapter parity, local links, and rustdoc warnings before deployment.
+chapters together. See [localization](docs/src/content/docs/en/localization.md) and
+[building the Starlight + rustdoc site](docs/src/content/docs/en/contributing.md). The docs workflow
+checks translation pairs, local links and anchors, browser regressions, and rustdoc
+warnings before deployment. See [support](SUPPORT.md) and the [code of conduct](CODE_OF_CONDUCT.md).
 
 ## Upstream data import
 
@@ -55,7 +56,7 @@ Do not edit generated catalogs by hand. Updating a pinned commit requires a
 review of source licensing, importer output, and semantic changes. Imported facts
 may establish experimental RazeRS support after reconciliation, a curated manifest,
 and local unit or replay tests; project-owned hardware is not a mandatory gate. See
-[`docs/evidence-policy.md`](docs/evidence-policy.md).
+[`docs/src/content/docs/en/evidence-policy.md`](docs/src/content/docs/en/evidence-policy.md).
 
 ## Device contributions
 
@@ -90,4 +91,4 @@ working on one computer does not establish cross-platform support.
 
 Normal builds must not expose arbitrary raw writes, firmware operations, or fuzzing
 through public IPC. Persistent commands need an explicit warning and a verification
-plan. See [`docs/safety.md`](docs/safety.md).
+plan. See [`docs/src/content/docs/en/safety.md`](docs/src/content/docs/en/safety.md).

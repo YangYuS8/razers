@@ -1,0 +1,25 @@
+{
+  "name": "razers-documentation",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "engines": { "node": ">=22.13.0" },
+  "scripts": {
+    "dev": "astro dev",
+    "check": "astro check",
+    "build": "astro build",
+    "preview": "astro preview",
+    "test": "node --test tests/*.test.mjs",
+    "test:site": "playwright test"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.42.0",
+    "@astrojs/markdown-remark": "7.3.0",
+    "astro": "7.2.10"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@playwright/test": "1.61.1",
+    "typescript": "6.0.3"
+  }
+}

@@ -3,6 +3,26 @@
 //! Byte-oriented transport boundaries for vendor HID reports.
 //!
 //! 厂商 HID 报文的字节级传输边界。
+//!
+//! # Example / 示例
+//!
+//! Validate a report exchange without opening any hardware.
+//! 不打开硬件即可验证一次报文交换。
+//!
+//! ```
+//! use razers_transport::{ReplayStep, ReplayTransport, ReportIo};
+//!
+//! let mut transport = ReplayTransport::new([
+//!     ReplayStep::SetFeature { report_id: 0, payload: vec![1, 2] },
+//!     ReplayStep::GetFeature { report_id: 0, response: vec![3, 4] },
+//! ]);
+//! transport.set_feature(0, &[1, 2])?;
+//! let mut response = [0; 2];
+//! assert_eq!(transport.get_feature(0, &mut response)?, 2);
+//! assert_eq!(response, [3, 4]);
+//! transport.verify_complete()?;
+//! # Ok::<(), razers_transport::TransportError>(())
+//! ```
 
 use std::collections::VecDeque;
 
@@ -15,12 +35,20 @@ use thiserror::Error;
 ///
 /// 此 trait 由单个串行连接任务持有，只负责字节读写；DPI、灯光等语义操作不属于传输层。平台后端处理报文 ID 约定。
 pub trait ReportIo: Send {
+    /// Send a feature payload using the backend's report-ID convention.
+    /// 按后端的报文 ID 约定发送 Feature 负载；错误不代表可以安全重试。
     fn set_feature(&mut self, report_id: u8, payload: &[u8]) -> Result<(), TransportError>;
 
+    /// Read a feature response into the caller's buffer and return bytes copied.
+    /// 将 Feature 响应写入调用方缓冲区并返回复制字节数；调用方需校验长度和协议内容。
     fn get_feature(&mut self, report_id: u8, output: &mut [u8]) -> Result<usize, TransportError>;
 
+    /// Send an output report. Backends report I/O errors without semantic retries.
+    /// 发送 Output 报告；后端返回 I/O 错误，不自行进行语义重试。
     fn write_output(&mut self, report_id: u8, payload: &[u8]) -> Result<(), TransportError>;
 
+    /// Read an input report and return bytes copied; framing belongs to the backend.
+    /// 读取 Input 报告并返回复制字节数；报文封装由后端处理。
     fn read_input(&mut self, output: &mut [u8]) -> Result<usize, TransportError>;
 }
 
@@ -76,16 +104,20 @@ pub struct ReplayTransport {
 }
 
 impl ReplayTransport {
+    /// Create a replay that consumes operations in order. 构建严格按序消费操作的回放。
     pub fn new(steps: impl IntoIterator<Item = ReplayStep>) -> Self {
         Self {
             steps: steps.into_iter().collect(),
         }
     }
 
+    /// Number of operations not yet consumed. 尚未消费的操作数量。
     pub fn remaining(&self) -> usize {
         self.steps.len()
     }
 
+    /// Reject incomplete traces with [`TransportError::ReplayIncomplete`].
+    /// 未完成全部预期操作时返回错误，防止测试遗漏协议步骤。
     pub fn verify_complete(&self) -> Result<(), TransportError> {
         if self.steps.is_empty() {
             Ok(())

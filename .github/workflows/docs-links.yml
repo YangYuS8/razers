@@ -1,0 +1,36 @@
+name: Documentation external links
+
+on:
+  schedule:
+    - cron: '21 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: documentation-external-links
+  cancel-in-progress: false
+
+jobs:
+  links:
+    name: Weekly external link audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Check published source references without blocking ordinary PRs
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --no-progress --max-retries 2 --timeout 20
+            --scheme https --scheme http --exclude-all-private
+            --root-dir '${{ github.workspace }}'
+            --exclude '^https://github.com/[^/]+/[^/]+/security/advisories/new$'
+            --exclude '^https://github.com/[^/]+/[^/]+/issues/new/choose$'
+            'README*.md' 'CONTRIBUTING.md' 'SUPPORT.md' 'SECURITY.md'
+            'docs/src/content/docs/**/*.md'
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

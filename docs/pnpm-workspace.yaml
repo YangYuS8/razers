@@ -1,0 +1,5 @@
+# Native build scripts are opt-in. Pagefind ships its binary as an optional package.
+allowBuilds:
+  esbuild: true
+  sharp: false
+minimumReleaseAgeStrict: true
