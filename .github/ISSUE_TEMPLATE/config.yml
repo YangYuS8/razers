@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Handbook and support / 手册与支持
+    url: https://yangyus8.top/razers/
+    about: Installation, troubleshooting, evidence and contribution guides / 安装、排障、证据与贡献指南
   - name: Security vulnerability
     url: https://github.com/YangYuS8/razers/security/advisories/new
     about: Report security or hardware-safety issues privately.

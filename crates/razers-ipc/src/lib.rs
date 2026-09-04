@@ -3,6 +3,23 @@
 //! Versioned JSON-RPC 2.0 messages shared by the RazeRS Agent and clients.
 //!
 //! RazeRS Agent 与客户端共用的版本化 JSON-RPC 2.0 消息。
+//!
+//! # Example / 示例
+//!
+//! Construct a versioned request without launching an Agent or accessing hardware.
+//! 无需启动 Agent 或访问硬件，即可构建带版本信息的请求。
+//!
+//! ```
+//! use razers_ipc::{Request, METHOD_AGENT_INFO, PROTOCOL_VERSION};
+//! use serde_json::json;
+//!
+//! let request = Request::new(METHOD_AGENT_INFO, json!(1));
+//! assert_eq!(request.protocol_version(), Some(PROTOCOL_VERSION));
+//! let wire = serde_json::to_string(&request)?;
+//! let decoded: Request = serde_json::from_str(&wire)?;
+//! assert_eq!(decoded.method, METHOD_AGENT_INFO);
+//! # Ok::<(), serde_json::Error>(())
+//! ```
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};

@@ -1,0 +1,38 @@
+name: Upstream evidence / 上游证据
+description: Contribute published evidence without owning or testing the device / 无需持有或测试设备
+title: 'evidence: '
+labels: ['device-support']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Hardware ownership and RazeRS test results are not required. Please do not guess unknown values.
+        不要求持有硬件或提供 RazeRS 实测结果，不知道的字段不要猜测。
+  - type: input
+    id: device
+    attributes:
+      label: Device or capability / 设备或能力
+      description: Include VID:PID and connection mode when known / 已知时提供 VID:PID 和连接方式
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Source evidence / 来源证据
+      description: Repository, commit, file, symbol and license when known / 已知时提供仓库、提交、文件、符号和许可证
+    validations:
+      required: true
+  - type: textarea
+    id: finding
+    attributes:
+      label: What can be reused or needs research? / 可以复用什么，有哪些待调研差异？
+      description: Keep facts, assumptions and unresolved conflicts separate / 区分事实、推断与未解决冲突
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy / 隐私
+      options:
+        - label: I removed serial numbers, tokens, private paths and raw input / 已移除序列号、令牌、私人路径与原始输入
+          required: true

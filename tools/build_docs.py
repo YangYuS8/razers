@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Build both mdBooks and rustdoc into the repository's generated target/site."""
+"""Build Starlight and rustdoc into one validated, static GitHub Pages artifact."""
 
 from __future__ import annotations
 
@@ -13,7 +13,6 @@ import subprocess
 import tomllib
 
 from check_docs import check_chapters, check_site
-from localize_book import localize_book
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "target/site"
@@ -25,18 +24,20 @@ def run(*args: str, env: dict[str, str] | None = None) -> None:
 
 def main() -> None:
     check_chapters(ROOT / "docs")
-    mdbook = os.environ.get("MDBOOK", "mdbook")
-    pinned = tomllib.loads((ROOT / "tools/docs-tools.toml").read_text())["mdbook"]
-    version = subprocess.check_output([mdbook, "--version"], text=True).strip()
-    if version != f"mdbook v{pinned}":
-        raise SystemExit(f"expected mdbook v{pinned}, got {version}")
+    docs_package = json.loads((ROOT / "docs/package.json").read_text())
+    manager = docs_package["packageManager"]
+    executable = os.environ.get("PNPM") or shutil.which("pnpm")
+    pnpm = [executable] if executable else ["npm", "exec", "--yes", f"--package={manager}", "--", "pnpm"]
+    version = subprocess.check_output([*pnpm, "--version"], text=True).strip()
+    if version != manager.removeprefix("pnpm@").split("+")[0]:
+        raise SystemExit(f"expected {manager}, got pnpm {version}")
+    run(*pnpm, "--dir", "docs", "install", "--frozen-lockfile")
     # Only remove this fixed generated site, never a user-supplied output path.
     if SITE.exists():
         shutil.rmtree(SITE)
     SITE.mkdir(parents=True)
-    for language, source in [("en", "docs"), ("zh-CN", "docs/zh-CN")]:
-        run(mdbook, "build", source, "--dest-dir", str(SITE / language))
-    localize_book(ROOT / "docs/zh-CN", SITE / "zh-CN")
+    run(*pnpm, "--dir", "docs", "run", "build",
+        env={**os.environ, "ASTRO_TELEMETRY_DISABLED": "1"})
     # Isolate and refresh generated API docs so removed crates cannot survive a rebuild.
     doc_target = ROOT / "target/docs-build"
     doc_output = doc_target / "doc"
@@ -74,10 +75,14 @@ def main() -> None:
     (SITE / "build-info.json").write_text(json.dumps({
         "commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         "version": tomllib.loads((ROOT / "Cargo.toml").read_text())["workspace"]["package"]["version"],
-        "mdbook": pinned,
+        "generator": "Astro Starlight",
+        "astro": docs_package["dependencies"]["astro"],
+        "starlight": docs_package["dependencies"]["@astrojs/starlight"],
+        "package_manager": manager,
+        "channel": "development",
     }, indent=2) + "\n")
     check_site(SITE)
-    print(f"Validated bilingual mdBook + rustdoc site: {SITE}")
+    print(f"Validated bilingual Starlight + rustdoc site: {SITE}")
 
 
 if __name__ == "__main__":

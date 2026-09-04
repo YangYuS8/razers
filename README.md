@@ -51,10 +51,10 @@ their respective owners.
 | `razers-cli` | Registry and packet inspection developer commands |
 
 The architectural boundaries and roadmap are documented in
-[`docs/architecture.md`](docs/architecture.md).
+[`docs/src/content/docs/en/architecture.md`](docs/src/content/docs/en/architecture.md).
 Release automation and dependency policy are documented in
-[`docs/releases.md`](docs/releases.md).
-The current local wire contract is documented in [`docs/ipc.md`](docs/ipc.md).
+[`docs/src/content/docs/en/releases.md`](docs/src/content/docs/en/releases.md).
+The current local wire contract is documented in [`docs/src/content/docs/en/ipc.md`](docs/src/content/docs/en/ipc.md).
 
 ## Quick start
 
@@ -109,9 +109,10 @@ Protocol fields and original diagnostic details are intentionally not translated
 
 Read the [English handbook](https://yangyus8.top/razers/en/),
 [中文手册](https://yangyus8.top/razers/zh-CN/), and
-[Rust API reference](https://yangyus8.top/razers/api/). Both mdBooks and rustdoc
-are built and link-checked together on every PR, then deployed to GitHub Pages
-from `main`; see [local documentation development](docs/contributing.md).
+[Rust API reference](https://yangyus8.top/razers/api/). The Starlight handbook and rustdoc
+are built and checked for translations, links, anchors, search, and mobile navigation
+on every PR, then deployed to GitHub Pages
+from `main`; see [local documentation development](docs/src/content/docs/en/contributing.md).
 
 ## Current status
 
@@ -132,7 +133,7 @@ Milestone 0 is complete, and descriptor-only enumeration begins Milestone 1:
 - [x] Read-only desktop device overview with explicit privacy and support states
 - [x] Private child Agent and versioned local JSON-RPC boundary
 - [x] English/Chinese UI, CLI, offline fonts, and persistent language selection
-- [x] Bilingual mdBook handbook and rustdoc with automated GitHub Pages deployment
+- [x] Bilingual Starlight handbook and rustdoc with automated GitHub Pages deployment
 - [ ] Safe, read-only identification of the first physical device
 - [ ] Capability-driven desktop UI
 
@@ -141,16 +142,21 @@ Milestone 0 is complete, and descriptor-only enumeration begins Milestone 1:
 Protocol facts and device metadata are traced to pinned upstream sources. The
 generated OpenRazer, OpenRGB, and iRazer catalogs are evidence-only: an entry does not claim
 that RazeRS can control or has tested that device.
-See [`docs/provenance.md`](docs/provenance.md) and the `evidence` entries in each
+See [`docs/src/content/docs/en/provenance.md`](docs/src/content/docs/en/provenance.md) and the `evidence` entries in each
 device manifest. The criteria for turning that evidence into experimental support
-are documented in [`docs/evidence-policy.md`](docs/evidence-policy.md). Code in this
+are documented in [`docs/src/content/docs/en/evidence-policy.md`](docs/src/content/docs/en/evidence-policy.md). Code in this
 repository is licensed under GPL-2.0-or-later; see [`LICENSE`](LICENSE).
 The bundled Noto Sans SC font is separately licensed under the SIL Open Font
 License 1.1; see [font provenance](assets/fonts/README.md).
 
 The application experience is governed by
-[`docs/product-principles.md`](docs/product-principles.md), including the permanent
+[`docs/src/content/docs/en/product-principles.md`](docs/src/content/docs/en/product-principles.md), including the permanent
 no-advertising, no-required-account, and privacy-by-default commitments.
 
-Please read [`docs/safety.md`](docs/safety.md) before experimenting with hardware,
+Please read [`docs/src/content/docs/en/safety.md`](docs/src/content/docs/en/safety.md) before experimenting with hardware,
 and [`CONTRIBUTING.md`](CONTRIBUTING.md) before submitting device support.
+
+Questions and feature requests are welcome; no device ownership is required to
+contribute upstream evidence. See [support](SUPPORT.md) and the
+[code of conduct](CODE_OF_CONDUCT.md). Documentation dependencies receive automated
+update PRs; patch updates can merge after required checks pass.

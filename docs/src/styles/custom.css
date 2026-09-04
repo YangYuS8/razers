@@ -1,0 +1,21 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+:root {
+  --sl-color-accent-low: #133529;
+  --sl-color-accent: #269f6f;
+  --sl-color-accent-high: #a2edc8;
+  --sl-font: system-ui, -apple-system, "Segoe UI", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+}
+:root[data-theme='light'] {
+  --sl-color-accent-low: #ddf7ea;
+  --sl-color-accent: #08754a;
+  --sl-color-accent-high: #15452f;
+}
+.development-notice {
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  border-inline-start: 3px solid var(--sl-color-accent);
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-white);
+  font-size: var(--sl-text-sm);
+}
+.development-notice a { margin-inline-start: 0.5em; }

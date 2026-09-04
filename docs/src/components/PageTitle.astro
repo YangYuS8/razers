@@ -1,0 +1,10 @@
+---
+// SPDX-License-Identifier: GPL-2.0-or-later
+import Default from '@astrojs/starlight/components/PageTitle.astro';
+const zh = Astro.currentLocale?.toLowerCase().startsWith('zh');
+---
+<aside class="development-notice" aria-label={zh ? '文档版本' : 'Documentation version'} data-pagefind-ignore>
+  {zh ? '开发版文档 · 跟随 main 更新，不代表已发布功能。' : 'Development docs · Track main, not necessarily the installed release.'}
+  <a href="https://github.com/YangYuS8/razers/releases">{zh ? '查看发行说明' : 'Release notes'}</a>
+</aside>
+<Default><slot /></Default>

@@ -1,5 +1,23 @@
 version: 2
 updates:
+  - package-ecosystem: npm
+    directory: /docs
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(docs-deps)"
+    groups:
+      docs-patch:
+        patterns: ["*"]
+        update-types: ["patch"]
+      docs-minor:
+        patterns: ["*"]
+        update-types: ["minor"]
+
   - package-ecosystem: cargo
     directory: /
     schedule:
