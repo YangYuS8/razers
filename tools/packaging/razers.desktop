@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=RazeRS
+Comment=View Razer devices and community support evidence
+Comment[zh_CN]=查看雷蛇设备与社区支持证据
+Exec=razers
+Icon=razers
+Terminal=false
+Categories=Utility;
+Keywords=Razer;mouse;keyboard;devices;
+Keywords[zh_CN]=雷蛇;鼠标;键盘;设备;
+StartupWMClass=io.github.yangyus8.razers

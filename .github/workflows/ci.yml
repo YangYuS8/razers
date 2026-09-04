@@ -17,6 +17,20 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  installers:
+    uses: ./.github/workflows/installers.yml
+
+  installer-gate:
+    name: Installers
+    runs-on: ubuntu-latest
+    needs: installers
+    if: always()
+    steps:
+      - name: Require every installer lifecycle check
+        env:
+          RESULT: ${{ needs.installers.result }}
+        run: test "$RESULT" = success
+
   test:
     name: Rust checks
     runs-on: ubuntu-latest
@@ -29,6 +43,7 @@ jobs:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: cargo fmt --all --check
+      - run: cargo fmt --manifest-path tools/packaging/Cargo.toml --check
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
       - run: cargo test --workspace --all-features
       - run: cargo run -p razers-cli -- registry validate devices

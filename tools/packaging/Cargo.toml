@@ -1,0 +1,13 @@
+[package]
+name = "razers-packaging"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license = "GPL-2.0-or-later"
+
+# Build tooling has its own lockfile and stable toolchain; it does not raise
+# the application's MSRV or add installer dependencies to shipped binaries.
+[workspace]
+
+[dependencies]
+cargo-packager = "=0.11.8"

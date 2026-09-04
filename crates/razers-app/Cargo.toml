@@ -18,3 +18,6 @@ razers-i18n.workspace = true
 razers-agent = { path = "../razers-agent" }
 razers-ipc.workspace = true
 serde_json.workspace = true
+
+[target.'cfg(windows)'.build-dependencies]
+embed-resource = "3.0.11"

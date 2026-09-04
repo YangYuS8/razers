@@ -36,6 +36,24 @@ updates:
         patterns: ["*"]
         update-types: ["minor"]
 
+  - package-ecosystem: cargo
+    directory: /tools/packaging
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:15"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(packaging-deps)"
+    groups:
+      packaging-patch:
+        patterns: ["*"]
+        update-types: ["patch"]
+      packaging-minor:
+        patterns: ["*"]
+        update-types: ["minor"]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
