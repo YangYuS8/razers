@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/YangYuS8/razers/compare/v0.2.0...v0.3.0) (2026-09-04)
+
+
+### Features
+
+* **i18n:** localize RazeRS and publish bilingual mdBook and rustdoc ([#9](https://github.com/YangYuS8/razers/issues/9)) ([5e3bc2a](https://github.com/YangYuS8/razers/commit/5e3bc2a175af2a7e775c08639a2ac702af1094f4))
+
 ## [0.2.0](https://github.com/YangYuS8/razers/compare/v0.1.0...v0.2.0) (2026-09-03)
 
 
