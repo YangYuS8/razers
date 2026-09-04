@@ -68,7 +68,7 @@ jobs:
         run: python tools/build_docs.py
       - name: Install browser for documentation regression tests
         run: pnpm --dir docs exec playwright install --with-deps chromium
-      - name: Verify languages, search, legacy links and mobile navigation
+      - name: Verify root entrance, languages, search, API and mobile navigation
         run: pnpm --dir docs run test:site
       - name: Keep browser diagnostics on failure
         if: failure()

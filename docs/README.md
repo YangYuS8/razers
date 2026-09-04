@@ -25,8 +25,12 @@ pnpm --dir docs run preview
 ```
 
 Preview: `http://localhost:4321/razers/`. `target/site/` is generated, never edited.
-`src/content/docs/{en,zh-CN}/` contains paired chapters; `astro.config.mjs` owns
-navigation; `scripts/legacy-routes.mjs` preserves the frozen list of old URLs.
+`src/content/docs/{en,zh-CN}/` contains paired Markdown/MDX chapters;
+`astro.config.mjs` owns navigation. English is served directly at `/razers/`, Chinese
+at `/razers/zh-CN/`. Both API overviews use Starlight and generate their crate list
+from Cargo metadata. The full build adds rustdoc's crate pages below `/razers/api/`.
 
-预览地址如上。正文按相同文件名成对维护，导航只维护一份；旧链接清单不随新章节增长。
+预览地址如上。Markdown/MDX 正文按相同文件名成对维护，导航只维护一份。
+根地址直接打开英文正文，中文位于 `/razers/zh-CN/`；API 总览使用同一套 Starlight 界面，
+crate 清单由 Cargo 自动生成，完整构建将 rustdoc 的库页面放在 `/razers/api/` 下。
 不要直接修改生成物，翻译检查不能代替对含义的审阅。

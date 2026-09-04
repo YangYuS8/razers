@@ -46,4 +46,4 @@ cargo test --workspace --all-features --locked
 cargo run -p razers-app -- --lang en
 ```
 
-See [the application guide](/razers/en/application/) for language selection and current limits.
+See [the application guide](/razers/application/) for language selection and current limits.

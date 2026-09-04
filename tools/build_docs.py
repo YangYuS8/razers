@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import html
 import json
 import os
 from pathlib import Path
@@ -46,31 +45,11 @@ def main() -> None:
     run("cargo", "doc", "--workspace", "--lib", "--all-features", "--no-deps", "--locked",
         "--target-dir", str(doc_target),
         env={**os.environ, "RUSTDOCFLAGS": "-D warnings"})
-    metadata = json.loads(subprocess.check_output(
-        ["cargo", "metadata", "--format-version", "1", "--no-deps", "--locked"], cwd=ROOT, text=True))
-    shutil.copytree(doc_output, SITE / "api")
-    packages = sorted((package for package in metadata["packages"]
-                       if package["id"] in metadata["workspace_members"]), key=lambda package: package["name"])
-    links = []
-    for package in packages:
-        for target in package["targets"]:
-            if "lib" not in target["kind"] or not target["doc"]:
-                continue
-            # cargo doc skips a same-named binary when a library is documented.
-            destination = f'{target["name"].replace("-", "_")}/index.html'
-            if (SITE / "api" / destination).exists():
-                link = f'<li><a href="{destination}">{html.escape(package["name"])}</a> — {html.escape(package.get("description") or "")}</li>'
-                if link not in links:
-                    links.append(link)
-    (SITE / "api/index.html").write_text(
-        '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width">'
-        '<title>RazeRS Rust API / Rust API 参考</title><link rel="stylesheet" href="../site.css">'
-        '<main><nav><a href="../en/">English handbook</a> · <a href="../zh-CN/" lang="zh-CN">中文手册</a></nav>'
-        '<h1>RazeRS Rust API</h1><p lang="zh-CN">工作区 API 参考。符号保持稳定，说明按原始源码生成。</p>'
-        '<p>Generated from the same commit as the handbook. Pre-alpha APIs may change.</p><ul>'
-        + "".join(links) + '</ul></main></html>', encoding="utf-8")
-    for name in ["index.html", "site.css"]:
-        shutil.copyfile(ROOT / ".github/pages" / name, SITE / name)
+    # Starlight owns every handbook page, including the root and API overview.
+    # Only rustdoc's crate pages/assets are added; never overwrite a handbook page.
+    if (doc_output / "index.html").exists():
+        raise RuntimeError("rustdoc index would overwrite the Starlight API overview")
+    shutil.copytree(doc_output, SITE / "api", dirs_exist_ok=True)
     (SITE / ".nojekyll").touch()
     (SITE / "build-info.json").write_text(json.dumps({
         "commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),

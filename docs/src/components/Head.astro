@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 const { entry, head } = Astro.locals.starlightRoute;
 // A Pages 404 is not a translated chapter. Starlight otherwise advertises
-// nonexistent /en/404/ and /zh-CN/404/ alternate URLs with trailingSlash: always.
+// nonexistent /404/ and /zh-CN/404/ alternate URLs with trailingSlash: always.
 const isNotFound = entry.id === '404';
 const entries = isNotFound
   ? head.filter(({ tag, attrs }) => !(tag === 'link' && ['canonical', 'alternate'].includes(String(attrs?.rel))))

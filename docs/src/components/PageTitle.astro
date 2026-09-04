@@ -1,11 +1,8 @@
 ---
 // SPDX-License-Identifier: GPL-2.0-or-later
 import Default from '@astrojs/starlight/components/PageTitle.astro';
-import legacyHeadings from '../../scripts/legacy-headings.json';
 const zh = Astro.currentLocale?.toLowerCase().startsWith('zh');
-const legacyId = (legacyHeadings as Record<string, string>)[Astro.locals.starlightRoute.entry.id];
 ---
-{legacyId && <span id={legacyId} aria-hidden="true" data-pagefind-ignore></span>}
 <aside class="development-notice" aria-label={zh ? '文档版本' : 'Documentation version'} data-pagefind-ignore>
   {zh ? '开发版文档 · 跟随 main 更新，不代表已发布功能。' : 'Development docs · Track main, not necessarily the installed release.'}
   <a href="https://github.com/YangYuS8/razers/releases">{zh ? '查看发行说明' : 'Release notes'}</a>

@@ -10,7 +10,7 @@ These curated manifests are intentionally distinct from the generated catalogs i
 `data/upstream`. Upstream data can seed a manifest and, after review and replay
 testing, establish an experimental protocol or capability without a project-owned
 device. It must not silently enable live I/O. When sources disagree, apply the
-research process in [`evidence-policy.md`](/razers/en/evidence-policy/) and keep unresolved
+research process in [`evidence-policy.md`](/razers/evidence-policy/) and keep unresolved
 fields visible and disabled.
 
 The registry parser rejects unknown fields, duplicate identifiers, invalid ranges,

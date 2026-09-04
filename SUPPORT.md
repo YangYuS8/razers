@@ -1,6 +1,6 @@
 # Support / 获取帮助
 
-[English handbook](https://yangyus8.top/razers/en/) · [中文手册](https://yangyus8.top/razers/zh-CN/)
+[English handbook](https://yangyus8.top/razers/) · [中文手册](https://yangyus8.top/razers/zh-CN/)
 
 Start with the handbook's troubleshooting guide. For questions, suggestions,
 documentation corrections, bugs, or device evidence, choose the appropriate

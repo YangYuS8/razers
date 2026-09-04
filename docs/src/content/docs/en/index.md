@@ -11,10 +11,10 @@ shows community evidence, but does not open hardware, read settings, or send rep
 Known capabilities are not implemented controls. Do not replace a working device
 configuration tool expecting feature parity yet.
 
-Start with [installation](/razers/en/getting-started/), [the desktop app](/razers/en/application/),
-or [troubleshooting](/razers/en/troubleshooting/). Developers can read the
-[architecture](/razers/en/architecture/), [evidence policy](/razers/en/evidence-policy/), and
-[API reference](/razers/en/api/).
+Start with [installation](/razers/getting-started/), [the desktop app](/razers/application/),
+or [troubleshooting](/razers/troubleshooting/). Developers can read the
+[architecture](/razers/architecture/), [evidence policy](/razers/evidence-policy/), and
+[API reference](/razers/api/).
 
 This site follows `main`, so it may describe features newer than the latest release.
 Check the [release notes](https://github.com/YangYuS8/razers/releases) for your version.

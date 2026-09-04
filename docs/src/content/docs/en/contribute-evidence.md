@@ -22,4 +22,4 @@ and untested capabilities separately; redact serial numbers, personal paths, and
 raw input. Never run unreviewed writes merely to complete a report.
 
 An accepted source record does not automatically enable controls. See the
-[evidence policy](/razers/en/evidence-policy/) for experimental support and scoped verification.
+[evidence policy](/razers/evidence-policy/) for experimental support and scoped verification.

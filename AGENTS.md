@@ -111,8 +111,11 @@
   面向用户的 README 变更同步 `README.md` 与 `README.zh-CN.md`；项目 API rustdoc 说明兼顾中英文。
 - 文档站使用 pnpm + Astro Starlight + rustdoc + GitHub Pages；通过 `tools/build_docs.py` 构建。
   Node 以 `docs/.node-version` 为准，pnpm 与框架以 `docs/package.json` 和锁文件为准。
-  保留旧 `.html` 书签和 `/api/` 路径；`target/site/` 是生成物，不直接编辑。
-  自动检查页面配对、翻译同步、本地链接与锚点、双语搜索和移动端导航；不要用绕过检查替代修复。
+  根入口直接呈现 Starlight 正文，不增加语言选择落地页或另写一套导航。
+  初期文档允许调整结构和 URL，不默认维护历史页面、锚点或兼容层；只有明确的现存依赖才采用最小处理，
+  例如已发布客户端使用的 `/en/` 帮助入口。不要把推测的未来需求固化成约束。
+  `target/site/` 是生成物，不直接编辑。自动检查根入口、页面配对、翻译同步、当前链接与锚点、
+  双语搜索和移动端导航；不要用绕过检查替代修复。
 
 ## 6. 实施与验证
 

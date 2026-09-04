@@ -37,7 +37,8 @@ the installed application needs no translation downloads.
 The `Documentation` workflow builds bilingual Starlight and workspace library rustdoc,
 checks matching pages, translation companion edits, generated local links and anchors,
 and rejects rustdoc warnings on every PR. It also runs browser regressions for
-language switching, Chinese/English search, legacy links, and mobile navigation.
+the direct root entrance, language switching, Chinese/English search, API navigation,
+and mobile navigation.
 Pushes to `main` deploy the same output to GitHub Pages using
 OIDC and the `github-pages` environment. Pull requests never receive Pages write
 permission. This is the latest development documentation, not a version archive;
@@ -49,7 +50,7 @@ Weekly external-link checks run separately from PR validation so a temporary
 third-party outage cannot prevent an unrelated fix from merging. Failed scheduled
 runs appear in GitHub Actions; browser failures retain diagnostic artifacts for seven
 days. Translation checks detect missing companion edits, not incorrect meaning.
-See [localization maintenance](/razers/en/localization/) for the authoring workflow.
+See [localization maintenance](/razers/localization/) for the authoring workflow.
 
 If an artifact runner has a transient failure, rerun the failed jobs. The workflow
 can also be dispatched with an existing `vX.Y.Z` tag to rebuild and replace that

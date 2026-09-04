@@ -38,5 +38,5 @@ do not need the internet. The Documentation link opens an external browser only 
 you choose it. No account, advertisement or background upload is involved.
 
 Known capabilities describe evidence, not available controls. Open controls stays
-disabled in this milestone. See [support levels](/razers/en/evidence-policy/) before interpreting
+disabled in this milestone. See [support levels](/razers/evidence-policy/) before interpreting
 `detected`, `experimental` or `verified` labels.

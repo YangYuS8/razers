@@ -23,19 +23,20 @@ pnpm --dir docs run test:site
 ```
 
 Use the Node LTS major in `docs/.node-version` and pnpm pinned in
-`docs/package.json`. The build generates `target/site/en`, `zh-CN` and `api`
-without fetching translations. Preview with `pnpm --dir docs run preview`, then
+`docs/package.json`. The build generates the English handbook at `target/site/`,
+Chinese under `zh-CN/`, and rustdoc crate pages under `api/`, without fetching
+translations. Preview with `pnpm --dir docs run preview`, then
 open `http://localhost:4321/razers/`. Hosted 404 pages use the `/razers/` project mount.
 The API reference documents workspace libraries; executable usage belongs in the
 handbook. Rustdoc's own navigation remains upstream English, with bilingual
-project API comments and a bilingual entry page.
+project API comments and Starlight API overviews in both languages.
 
 Update English and Chinese messages/chapters together. Follow the
-[localization guide](/razers/en/localization/), [safety policy](/razers/en/safety/) and
-[evidence policy](/razers/en/evidence-policy/). Do not upload private identifiers or live
+[localization guide](/razers/localization/), [safety policy](/razers/safety/) and
+[evidence policy](/razers/evidence-policy/). Do not upload private identifiers or live
 input traces. Security vulnerabilities should be reported privately using GitHub's
 repository security reporting facility rather than a public issue.
 
-You can [contribute upstream evidence without hardware](/razers/en/contribute-evidence/).
+You can [contribute upstream evidence without hardware](/razers/contribute-evidence/).
 For questions, feature requests, and conduct expectations, see
-[community and support](/razers/en/community/).
+[community and support](/razers/community/).

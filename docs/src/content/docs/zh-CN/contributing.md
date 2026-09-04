@@ -22,11 +22,12 @@ pnpm --dir docs run test:site
 ```
 
 使用 `docs/.node-version` 中的 Node LTS 主版本和 `docs/package.json` 固定的 pnpm 版本。
-构建生成 `target/site/en`、`zh-CN` 和 `api`，不需要联网下载翻译。
+构建在 `target/site/` 根目录生成英文手册，在 `zh-CN/` 下生成中文手册，
+并在 `api/` 下补入 rustdoc 的库页面，不需要联网下载翻译。
 使用 `pnpm --dir docs run preview`，然后打开
 `http://localhost:4321/razers/` 本地预览；线上 404 页按 `/razers/` 项目路径定位资源。
 API 参考面向工作区库，命令行用法放在手册。
-rustdoc 自带导航保留上游英文，项目 API 注释与入口提供中英双语。
+rustdoc 自带导航保留上游英文，项目 API 注释提供双语说明，总览在中英文 Starlight 手册内呈现。
 
 英文与中文文案、章节请一起更新，遵循[翻译指南](/razers/zh-CN/localization/)、[安全政策](/razers/zh-CN/safety/)
 和[证据政策](/razers/zh-CN/evidence-policy/)。不要上传私人标识或真实输入流。

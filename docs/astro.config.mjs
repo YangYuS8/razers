@@ -1,23 +1,24 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
-import { legacyCompatibility } from './scripts/legacy-routes.mjs';
 
 export default defineConfig({
   site: 'https://yangyus8.top',
   base: '/razers',
   trailingSlash: 'always',
   outDir: '../target/site',
-  integrations: [legacyCompatibility(), starlight({
+  // v0.3.0's desktop Help button uses this address. No historical chapter aliases.
+  redirects: { '/en/': '/razers/' },
+  integrations: [starlight({
     title: 'RazeRS',
     description: 'Local, ad-free Razer peripheral software. 本地运行、无广告的雷蛇外设管理项目。',
-    defaultLocale: 'en',
+    defaultLocale: 'root',
     locales: {
-      en: { label: 'English', lang: 'en' },
+      root: { label: 'English', lang: 'en' },
       'zh-CN': { label: '简体中文', lang: 'zh-CN' },
     },
     social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/YangYuS8/razers' }],
-    editLink: { baseUrl: 'https://github.com/YangYuS8/razers/edit/main/' },
+    editLink: { baseUrl: 'https://github.com/YangYuS8/razers/edit/main/docs/' },
     lastUpdated: true,
     customCss: ['./src/styles/custom.css'],
     components: {
