@@ -2251,7 +2251,7 @@ checksum = "20675572f6f24e9e76ef639bc5552774ed45f1c30e2951e1e99c59888861c539"
 
 [[package]]
 name = "razers-agent"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "razers-device-registry",
  "razers-i18n",
@@ -2265,7 +2265,7 @@ dependencies = [
 
 [[package]]
 name = "razers-app"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "eframe",
  "razers-agent",
@@ -2276,7 +2276,7 @@ dependencies = [
 
 [[package]]
 name = "razers-cli"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "razers-device-registry",
  "razers-i18n",
@@ -2287,7 +2287,7 @@ dependencies = [
 
 [[package]]
 name = "razers-device-registry"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "razers-types",
  "serde",
@@ -2297,7 +2297,7 @@ dependencies = [
 
 [[package]]
 name = "razers-i18n"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde_json",
  "sys-locale",
@@ -2305,7 +2305,7 @@ dependencies = [
 
 [[package]]
 name = "razers-ipc"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -2313,14 +2313,14 @@ dependencies = [
 
 [[package]]
 name = "razers-protocol-core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "thiserror 2.0.20",
 ]
 
 [[package]]
 name = "razers-protocol-razer90"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "razers-protocol-core",
  "razers-transport",
@@ -2329,7 +2329,7 @@ dependencies = [
 
 [[package]]
 name = "razers-transport"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "razers-protocol-core",
  "thiserror 2.0.20",
@@ -2337,7 +2337,7 @@ dependencies = [
 
 [[package]]
 name = "razers-transport-hidapi"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "hidapi",
  "thiserror 2.0.20",
@@ -2345,7 +2345,7 @@ dependencies = [
 
 [[package]]
 name = "razers-types"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "thiserror 2.0.20",
