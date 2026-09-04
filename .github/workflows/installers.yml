@@ -39,6 +39,7 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
       CARGO_BUILD_JOBS: '2'
+      PYTHONUTF8: '1'
       MACOSX_DEPLOYMENT_TARGET: '11.0'
       RELEASE_TARGET: ${{ matrix.target }}
       REQUESTED_TAG: ${{ inputs.tag }}

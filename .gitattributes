@@ -1,0 +1,5 @@
+# Keep embedded text and release notices byte-identical across runner platforms.
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.ttf binary
