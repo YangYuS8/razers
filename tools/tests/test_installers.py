@@ -12,7 +12,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from check_installers import deb_members, inspect_deb, require_hosted_runner, run_nsis, verify_checksum
 from package_installers import (
-    APP_ID, TARGETS, arch_recipe, artifact_name, packager_config, validate_version,
+    APP_ID, TARGETS, arch_recipe, artifact_name, packager_config, stage_macos_binaries, validate_version,
 )
 from package_release import BINARY_NAMES, NOTICES, write_checksum
 from update_release_notes import MARKER, with_downloads
@@ -93,6 +93,24 @@ class InstallerConfiguration(unittest.TestCase):
 
 
 class InstallerValidation(unittest.TestCase):
+    def test_mac_tools_are_presigned_outside_the_bundle_without_changing_portable_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            work = Path(directory)
+            originals = []
+            for name in BINARY_NAMES:
+                source = work / name
+                source.write_bytes(b"original unsigned binary")
+                originals.append(source)
+            with patch("package_installers.binary_paths", return_value=originals), \
+                    patch("package_installers.run") as sign:
+                stage_macos_binaries("x86_64-apple-darwin", work / "staged")
+                self.assertEqual(sign.call_count, 3)
+                for call, source in zip(sign.call_args_list, originals):
+                    self.assertEqual(call.args[0], "codesign")
+                    self.assertIn("--timestamp=none", call.args)
+                    self.assertEqual(call.args[-1], work / "staged" / source.name)
+                    self.assertEqual(source.read_bytes(), b"original unsigned binary")
+
     def test_nsis_directory_parameter_stays_last_and_unquoted(self):
         for prefix in ["/D=", "_?="]:
             with patch("check_installers.subprocess.run") as execute:

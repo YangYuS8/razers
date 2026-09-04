@@ -165,6 +165,22 @@ def build_arch(deb: Path, target: str, version: str, directory: Path) -> Path:
     return packages[0]
 
 
+def stage_macos_binaries(target: str, directory: Path) -> None:
+    """Give each standalone tool a valid ad-hoc signature before bundling.
+
+    cargo-packager 0.11.8 sorts signing targets by path depth only. Signing the
+    bundle's main executable can seal the bundle before a same-depth sibling has
+    been signed. This fails for unsigned Intel binaries (ARM linkers pre-sign
+    theirs). Pre-sign staged copies, without changing the portable build outputs.
+    """
+    directory.mkdir()
+    for source in binary_paths(target):
+        destination = directory / source.name
+        shutil.copy2(ROOT / source, destination)
+        run("codesign", "--force", "--sign", "-", "--options", "runtime",
+            "--timestamp=none", destination)
+
+
 def build_installers(target: str, version: str, output: Path, packager: Path) -> list[Path]:
     validate_version(version)
     if target not in TARGETS:
@@ -178,7 +194,11 @@ def build_installers(target: str, version: str, output: Path, packager: Path) ->
         work = Path(temporary)
         raw = work / "output"
         config_file = work / "packager.json"
-        config_file.write_text(json.dumps(packager_config(target, version, raw), indent=2), encoding="utf-8")
+        config = packager_config(target, version, raw)
+        if "apple" in target:
+            stage_macos_binaries(target, work / "binaries")
+            config["binariesDir"] = str(work / "binaries")
+        config_file.write_text(json.dumps(config, indent=2), encoding="utf-8")
         run(packager.resolve(), "--config", config_file)
         extension = TARGETS[target][0]
         packages = list(raw.glob(f"*.{extension}"))
