@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 //! Private child-process IPC client used by the RazeRS desktop application.
+//!
+//! RazeRS 桌面应用使用的私有子进程 IPC 客户端。
 
 use std::{
     env,
@@ -16,10 +18,34 @@ use razers_ipc::{
 };
 use serde_json::json;
 
+/// A localized summary plus untranslated technical detail; never a hardware command.
+/// 可翻译的错误摘要与保留原样的技术详情。
+#[derive(Clone, Debug)]
+pub struct DiscoveryError {
+    pub message: &'static str,
+    pub detail: String,
+}
+impl DiscoveryError {
+    fn new(message: &'static str, detail: impl std::fmt::Display) -> Self {
+        Self {
+            message,
+            detail: detail.to_string(),
+        }
+    }
+}
+impl std::fmt::Display for DiscoveryError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {}", self.message, self.detail)
+    }
+}
+impl std::error::Error for DiscoveryError {}
+
 /// Ask a private Agent child process for the current descriptor-only device list.
-pub fn discover_via_agent() -> Result<DeviceList, String> {
+///
+/// 向私有 Agent 子进程请求当前仅基于描述符的设备列表。
+pub fn discover_via_agent() -> Result<DeviceList, DiscoveryError> {
     let current_executable = env::current_exe()
-        .map_err(|error| format!("unable to locate the RazeRS executable: {error}"))?;
+        .map_err(|error| DiscoveryError::new("Unable to locate the RazeRS executable.", error))?;
     let (program, arguments) = agent_command(&current_executable);
     request_devices(program, &arguments)
 }
@@ -41,48 +67,66 @@ fn agent_command(current_executable: &Path) -> (PathBuf, Vec<OsString>) {
     }
 }
 
-fn request_devices(program: PathBuf, arguments: &[OsString]) -> Result<DeviceList, String> {
+fn request_devices(program: PathBuf, arguments: &[OsString]) -> Result<DeviceList, DiscoveryError> {
     let mut child = Command::new(&program)
         .args(arguments)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|error| format!("unable to start the local RazeRS Agent: {error}"))?;
+        .map_err(|error| DiscoveryError::new("Unable to start the local RazeRS Agent.", error))?;
     let request = Request::new(METHOD_DEVICES_LIST, json!(1));
     let mut input = child
         .stdin
         .take()
-        .ok_or_else(|| "unable to open the local RazeRS Agent input".to_owned())?;
+        .ok_or_else(|| DiscoveryError::new("Unable to open the local RazeRS Agent input.", ""))?;
     serde_json::to_writer(&mut input, &request)
-        .map_err(|error| format!("unable to encode the Agent request: {error}"))?;
+        .map_err(|error| DiscoveryError::new("Unable to encode the Agent request.", error))?;
     input
         .write_all(b"\n")
-        .map_err(|error| format!("unable to send the Agent request: {error}"))?;
+        .map_err(|error| DiscoveryError::new("Unable to send the Agent request.", error))?;
     drop(input);
 
-    let output = child
-        .wait_with_output()
-        .map_err(|error| format!("unable to wait for the local RazeRS Agent: {error}"))?;
+    let output = child.wait_with_output().map_err(|error| {
+        DiscoveryError::new("Unable to wait for the local RazeRS Agent.", error)
+    })?;
     if !output.status.success() {
         let detail = String::from_utf8_lossy(&output.stderr).trim().to_owned();
-        return Err(if detail.is_empty() {
-            "the local RazeRS Agent stopped unexpectedly".into()
-        } else {
-            format!("the local RazeRS Agent stopped unexpectedly: {detail}")
-        });
+        return Err(DiscoveryError::new(
+            "The local RazeRS Agent stopped unexpectedly.",
+            detail,
+        ));
     }
     decode_device_response(&output.stdout)
 }
 
-fn decode_device_response(encoded: &[u8]) -> Result<DeviceList, String> {
-    let response: Response = serde_json::from_slice(encoded)
-        .map_err(|error| format!("the local RazeRS Agent returned invalid data: {error}"))?;
+fn decode_device_response(encoded: &[u8]) -> Result<DeviceList, DiscoveryError> {
+    let response: Response = serde_json::from_slice(encoded).map_err(|error| {
+        DiscoveryError::new("The local RazeRS Agent returned invalid data.", error)
+    })?;
     if response.jsonrpc != JSON_RPC_VERSION || response.id != json!(1) {
-        return Err("the local RazeRS Agent returned a mismatched response".into());
+        return Err(DiscoveryError::new(
+            "The local RazeRS Agent returned a mismatched response.",
+            "",
+        ));
     }
     if let Some(error) = response.error {
-        return Err(format!("{} ({})", error.message, error.code));
+        let message = match error.code {
+            razers_ipc::ERROR_PROTOCOL_VERSION => {
+                "The local RazeRS Agent uses an incompatible protocol version."
+            }
+            razers_ipc::ERROR_INTERNAL => "Device discovery failed.",
+            _ => "Agent request failed.",
+        };
+        return Err(DiscoveryError::new(
+            message,
+            format!(
+                "{} ({}) {}",
+                error.message,
+                error.code,
+                error.data.unwrap_or_default()
+            ),
+        ));
     }
     match response.result {
         Some(ResponseResult::DeviceList(devices))
@@ -90,12 +134,14 @@ fn decode_device_response(encoded: &[u8]) -> Result<DeviceList, String> {
         {
             Ok(devices)
         }
-        Some(ResponseResult::DeviceList(_)) => {
-            Err("the local RazeRS Agent uses an incompatible protocol version".into())
-        }
-        Some(ResponseResult::AgentInfo(_)) | None => {
-            Err("the local RazeRS Agent returned an unexpected result".into())
-        }
+        Some(ResponseResult::DeviceList(_)) => Err(DiscoveryError::new(
+            "The local RazeRS Agent uses an incompatible protocol version.",
+            "",
+        )),
+        Some(ResponseResult::AgentInfo(_)) | None => Err(DiscoveryError::new(
+            "The local RazeRS Agent returned an unexpected result.",
+            "",
+        )),
     }
 }
 
@@ -121,6 +167,7 @@ mod tests {
                     support_detail: "Read-only".into(),
                     capabilities: vec!["DPI".into()],
                     evidence_label: "Recorded".into(),
+                    evidence_source_count: None,
                     control_available: false,
                 }],
                 interface_count: 2,
@@ -163,7 +210,7 @@ mod tests {
 
         let error = decode_device_response(&serde_json::to_vec(&response).unwrap()).unwrap_err();
 
-        assert!(error.contains("incompatible protocol version"));
+        assert!(error.message.contains("incompatible protocol version"));
     }
 
     #[test]

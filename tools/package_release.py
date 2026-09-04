@@ -38,6 +38,9 @@ def copy_payload(staging: Path, binaries: list[Path]) -> None:
         destination.chmod(0o755)
     for name in ("README.md", "LICENSE", "CHANGELOG.md"):
         shutil.copyfile(name, staging / name)
+    shutil.copyfile("README.zh-CN.md", staging / "README.zh-CN.md")
+    shutil.copyfile("assets/fonts/OFL.txt", staging / "FONT-LICENSE.txt")
+    shutil.copyfile("assets/fonts/README.md", staging / "FONT-NOTICE.md")
 
 
 def write_tar(archive: Path, staging: Path) -> None:

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 //! Byte-oriented transport boundaries for vendor HID reports.
+//!
+//! 厂商 HID 报文的字节级传输边界。
 
 use std::collections::VecDeque;
 
@@ -10,6 +12,8 @@ use thiserror::Error;
 ///
 /// Semantic operations such as setting DPI or lighting deliberately do not belong
 /// in this trait. Platform backends are responsible for report-ID conventions.
+///
+/// 此 trait 由单个串行连接任务持有，只负责字节读写；DPI、灯光等语义操作不属于传输层。平台后端处理报文 ID 约定。
 pub trait ReportIo: Send {
     fn set_feature(&mut self, report_id: u8, payload: &[u8]) -> Result<(), TransportError>;
 
@@ -42,6 +46,8 @@ pub enum TransportError {
 }
 
 /// One expected operation in a deterministic, hardware-free transport trace.
+///
+/// 确定性、无硬件传输轨迹中的一个预期操作。
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ReplayStep {
     SetFeature { report_id: u8, payload: Vec<u8> },
@@ -62,6 +68,8 @@ impl ReplayStep {
 }
 
 /// A strict in-memory transport for protocol tests and captured golden traces.
+///
+/// 用于协议测试和基准轨迹回放的严格内存传输实现。
 #[derive(Clone, Debug, Default)]
 pub struct ReplayTransport {
     steps: VecDeque<ReplayStep>,

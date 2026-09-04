@@ -2,6 +2,8 @@
 
 Thank you for helping build safe, verifiable support for Razer hardware.
 
+[中文贡献指南](docs/zh-CN/contributing.md) · [Online handbook](https://yangyus8.top/razers/en/)
+
 ## Development setup
 
 ```bash
@@ -18,6 +20,12 @@ Document the origin of protocol facts and device metadata using a pinned upstrea
 commit. Do not copy code from an incompatible license.
 Use Conventional Commit subjects so the automated Release PR can derive versions
 and changelog sections; see [`docs/releases.md`](docs/releases.md).
+
+User-facing changes must update both embedded language catalogs, with matching
+positional placeholders. Update the corresponding English and Chinese handbook
+chapters together. See [localization](docs/localization.md) and
+[building the mdBook + rustdoc site](docs/contributing.md). The docs workflow
+checks chapter parity, local links, and rustdoc warnings before deployment.
 
 ## Upstream data import
 

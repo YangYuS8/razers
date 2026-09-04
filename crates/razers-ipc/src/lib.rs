@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 //! Versioned JSON-RPC 2.0 messages shared by the RazeRS Agent and clients.
+//!
+//! RazeRS Agent 与客户端共用的版本化 JSON-RPC 2.0 消息。
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -133,6 +135,11 @@ pub struct DeviceSummary {
     pub support_detail: String,
     pub capabilities: Vec<String>,
     pub evidence_label: String,
+    /// Additive v1 metadata for localized evidence counts; old Agents omit it.
+    ///
+    /// v1 的可选扩展字段，用于本地化来源数量；旧版 Agent 不提供该字段。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub evidence_source_count: Option<usize>,
     pub control_available: bool,
 }
 
@@ -163,6 +170,25 @@ mod tests {
         assert_eq!(encoded["id"], 7);
         assert_eq!(encoded["params"]["protocol_version"], PROTOCOL_VERSION);
         assert_eq!(request.protocol_version(), Some(PROTOCOL_VERSION));
+    }
+
+    #[test]
+    fn accepts_legacy_device_summaries_without_localization_metadata() {
+        let old = json!({
+            "display_name": "Razer Test", "vid": 5426, "pid": 153,
+            "interface_count": 1, "vendor_interface_count": 1,
+            "support_label": "Detected", "support_detail": "Legacy detail",
+            "capabilities": ["DPI"], "evidence_label": "Legacy evidence",
+            "control_available": false
+        });
+        let mut device: DeviceSummary = serde_json::from_value(old.clone()).unwrap();
+        assert_eq!(device.evidence_source_count, None);
+        assert_eq!(serde_json::to_value(&device).unwrap(), old);
+        device.evidence_source_count = Some(3);
+        assert_eq!(
+            serde_json::to_value(&device).unwrap()["evidence_source_count"],
+            3
+        );
     }
 
     #[test]

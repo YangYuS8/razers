@@ -4,6 +4,8 @@
 //!
 //! The first transport is inherited standard I/O, keeping the Agent private to
 //! its parent application while the persistent per-user transport is designed.
+//!
+//! 本地、权限分离的设备发现与请求处理。当前通过继承的标准输入输出，仅为父应用提供私有服务；每用户持久传输尚在设计中。
 
 use std::{
     collections::BTreeMap,
@@ -43,6 +45,8 @@ const DEVICE_MANIFESTS: &[(&str, &str)] =
     include!(concat!(env!("OUT_DIR"), "/embedded_devices.rs"));
 
 /// Enumerate connected Razer interfaces without opening hardware.
+///
+/// 枚举已连接的 Razer 接口，不打开硬件。
 pub fn discover() -> Result<DeviceList, String> {
     let knowledge = EmbeddedKnowledge::load()?;
     let interfaces = enumerate_razer().map_err(|error| error.to_string())?;
@@ -50,6 +54,8 @@ pub fn discover() -> Result<DeviceList, String> {
 }
 
 /// Handle one already-parsed RazeRS JSON-RPC request.
+///
+/// 处理一条已经解析的 RazeRS JSON-RPC 请求。
 pub fn handle_request(request: Request) -> Response {
     let id = request.id.clone().unwrap_or(Value::Null);
     if request.jsonrpc != JSON_RPC_VERSION || !valid_id(&id) {
@@ -94,6 +100,8 @@ pub fn handle_request(request: Request) -> Response {
 }
 
 /// Serve newline-delimited JSON-RPC requests until the parent closes stdin.
+///
+/// 处理按行分隔的 JSON-RPC 请求，直到父进程关闭标准输入。
 pub fn serve_stdio(reader: impl BufRead, mut writer: impl Write) -> io::Result<()> {
     for line in reader.lines() {
         if let Some(response) = response_for_line(&line?) {
@@ -267,6 +275,9 @@ impl EmbeddedKnowledge {
             support_detail: support_detail.into(),
             capabilities,
             evidence_label: evidence_label(assessment),
+            evidence_source_count: assessment
+                .filter(|value| value.readiness == EvidenceReadiness::Corroborated)
+                .map(|value| value.sources.len()),
             control_available: false,
         }
     }

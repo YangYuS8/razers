@@ -1,0 +1,13 @@
+[package]
+name = "razers-i18n"
+description = "Offline English and Simplified Chinese localization for RazeRS"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+serde_json.workspace = true
+sys-locale.workspace = true

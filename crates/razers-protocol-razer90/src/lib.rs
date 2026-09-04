@@ -5,6 +5,8 @@
 //! This layer owns protocol timing and response validation while leaving byte
 //! movement to [`ReportIo`]. A connection actor must retain exclusive ownership
 //! of an exchange so one command cannot consume another command's response.
+//!
+//! 此层负责协议时序和响应校验，字节读写交给 ReportIo。连接任务必须独占一次交换，避免一条命令误取另一条命令的响应。
 
 use std::{thread, time::Duration};
 
@@ -25,6 +27,8 @@ pub const STATUS_NOT_SUPPORTED: u8 = 0x05;
 /// because some devices complete the operation anyway, while opsrzr resends the
 /// request. RazeRS makes that choice explicit so write commands are never
 /// retried accidentally.
+///
+/// 如何解释忙碌状态 0x01 由设备驱动决定。OpenRazer 接受有效忙碌响应，opsrzr 则重发；RazeRS 显式保留这种选择，防止写命令被意外重试。
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum BusyHandling {
     Accept,
@@ -32,6 +36,8 @@ pub enum BusyHandling {
 }
 
 /// Per-connection rules for one classic feature-report exchange.
+///
+/// 每个连接上一次经典功能报文交换所用的规则。
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ExchangePolicy {
     pub report_id: u8,
@@ -46,6 +52,8 @@ pub struct ExchangePolicy {
 impl ExchangePolicy {
     /// Construct a conservative policy that accepts, but does not resend, a
     /// valid busy response. Callers must provide their device's response delay.
+    ///
+    /// 构造保守策略：接受有效忙碌响应而不重发。调用者必须指定设备的响应等待时间。
     pub const fn new(report_id: u8, response_wait: Duration) -> Self {
         Self {
             report_id,
@@ -60,6 +68,8 @@ impl ExchangePolicy {
 
     /// Opt into resending a busy command. Use only for operations known to be
     /// safe to repeat on the selected device and firmware.
+    ///
+    /// 显式允许重发忙碌命令；仅适用于已确认在该设备与固件上可安全重复的操作。
     pub const fn with_busy_retry(mut self, retries: u8, wait: Duration) -> Self {
         self.busy_handling = BusyHandling::Retry;
         self.busy_retries = retries;
@@ -79,6 +89,8 @@ impl ExchangePolicy {
 }
 
 /// Injectable waiting boundary for deterministic protocol tests.
+///
+/// 可注入的等待接口，用于确定性协议测试。
 pub trait Delay {
     fn wait(&mut self, duration: Duration);
 }
@@ -93,6 +105,8 @@ impl Delay for ThreadDelay {
 }
 
 /// A serialized classic feature-report exchange over a byte transport.
+///
+/// 字节传输之上的串行经典功能报文交换。
 pub struct FeatureExchange<T, D = ThreadDelay> {
     transport: T,
     policy: ExchangePolicy,
@@ -132,6 +146,8 @@ impl<T: ReportIo, D: Delay> FeatureExchange<T, D> {
     ///
     /// Command class and ID are always validated. Transaction ID and remaining
     /// packet validation are policy controlled because upstream devices differ.
+    ///
+    /// 发送一条请求并返回已校验响应。始终校验命令类与命令 ID；因上游设备存在差异，事务 ID 和剩余包数由策略决定是否校验。
     pub fn execute(&mut self, request: &Report90) -> Result<Report90, ExchangeError> {
         let request_bytes = request.encode()?;
         let maximum_attempts = usize::from(self.policy.busy_retries) + 1;

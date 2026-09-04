@@ -1,5 +1,11 @@
 # Local IPC protocol
 
+Language selection is client-side: the Agent's wire keys, codes, and diagnostic
+messages remain locale-independent. Version 1 adds an optional
+`evidence_source_count` to device summaries for translated count messages. New
+clients accept old responses that omit it; older clients ignore the new field.
+The existing English `evidence_label` is retained for compatibility.
+
 RazeRS protocol version 1 uses newline-delimited
 [JSON-RPC 2.0](https://www.jsonrpc.org/specification) between the desktop application
 and a private Agent child. Each line contains one request or response. Batch arrays

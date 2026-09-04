@@ -13,6 +13,7 @@ name = "razersctl"
 path = "src/main.rs"
 
 [dependencies]
+razers-i18n.workspace = true
 razers-device-registry.workspace = true
 razers-protocol-core.workspace = true
 razers-transport-hidapi.workspace = true

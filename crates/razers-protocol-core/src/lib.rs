@@ -1,22 +1,34 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 //! Pure protocol codecs with no device or operating-system I/O.
+//!
+//! 纯协议编解码，不执行设备或操作系统读写。
 
 use thiserror::Error;
 
 /// Total size of the classic Razer vendor report.
+///
+/// 经典 Razer 厂商报文的总长度。
 pub const REPORT_90_SIZE: usize = 90;
 /// Maximum number of argument bytes carried by a classic report.
+///
+/// 经典报文可携带的参数字节数上限。
 pub const REPORT_90_ARGUMENT_CAPACITY: usize = 80;
 /// Byte position containing the report checksum.
+///
+/// 报文校验和所在的字节位置。
 pub const REPORT_90_CRC_INDEX: usize = 88;
 /// Byte position containing the reserved trailing byte.
+///
+/// 末尾保留字节的位置。
 pub const REPORT_90_RESERVED_INDEX: usize = 89;
 
 /// A decoded classic 90-byte Razer vendor report.
 ///
 /// The representation is intentionally explicit instead of relying on packed
 /// structs or unsafe memory conversion.
+///
+/// 解码后的 90 字节经典 Razer 厂商报文。字段显式表示，不依赖紧凑结构体或不安全内存转换。
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Report90 {
     pub status: u8,
@@ -30,6 +42,8 @@ pub struct Report90 {
 }
 
 /// Errors produced while encoding or decoding a classic report.
+///
+/// 经典报文编解码可能产生的错误。
 #[derive(Clone, Debug, Error, Eq, PartialEq)]
 pub enum Report90Error {
     #[error("expected a {REPORT_90_SIZE}-byte report, received {actual} bytes")]
@@ -46,6 +60,8 @@ pub enum Report90Error {
 
 impl Report90 {
     /// Construct a host-to-device command with default status and protocol fields.
+    ///
+    /// 使用默认状态和协议字段构造主机到设备的命令。
     pub fn command(
         command_class: u8,
         command_id: u8,
@@ -67,17 +83,23 @@ impl Report90 {
     }
 
     /// Set the transaction identifier used to match a request and response.
+    ///
+    /// 设置用于匹配请求与响应的事务标识。
     pub fn with_transaction_id(mut self, transaction_id: u8) -> Self {
         self.transaction_id = transaction_id;
         self
     }
 
     /// Return only the meaningful argument bytes declared by `data_size`.
+    ///
+    /// 仅返回 `data_size` 声明的有效参数字节。
     pub fn arguments(&self) -> &[u8] {
         &self.arguments
     }
 
     /// Encode this report into its fixed-size wire representation.
+    ///
+    /// 将此报文编码为固定长度的线上格式。
     pub fn encode(&self) -> Result<[u8; REPORT_90_SIZE], Report90Error> {
         validate_argument_length(self.arguments.len())?;
 
@@ -96,6 +118,8 @@ impl Report90 {
     }
 
     /// Decode and validate an exact 90-byte wire report.
+    ///
+    /// 解码并校验长度恰好为 90 字节的报文。
     pub fn decode(bytes: &[u8]) -> Result<Self, Report90Error> {
         if bytes.len() != REPORT_90_SIZE {
             return Err(Report90Error::InvalidLength {
@@ -140,6 +164,8 @@ fn validate_argument_length(actual: usize) -> Result<(), Report90Error> {
 /// Calculate the XOR checksum over byte positions 2 through 87 inclusive.
 ///
 /// The CRC and reserved bytes are intentionally excluded.
+///
+/// 对第 2 至 87 字节（含两端）计算异或校验和；不包含校验和与保留字节。
 pub fn calculate_crc(bytes: &[u8; REPORT_90_SIZE]) -> u8 {
     bytes[2..REPORT_90_CRC_INDEX]
         .iter()

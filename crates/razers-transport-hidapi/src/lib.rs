@@ -4,6 +4,8 @@
 //!
 //! This milestone enumerates descriptors only. It does not open devices or send
 //! feature, input, or output reports.
+//!
+//! 跨平台、保护隐私的 HID 发现。当前仅枚举描述符，不打开设备，也不发送功能、输入或输出报文。
 
 use hidapi::HidApi;
 use thiserror::Error;
@@ -14,6 +16,8 @@ pub const RAZER_VENDOR_ID: u16 = 0x1532;
 ///
 /// Device paths and serial-number values are deliberately excluded because they
 /// can contain stable identifiers. Callers only learn whether a serial exists.
+///
+/// 接口摘要仅保留匹配清单所需的非敏感信息。不包含设备路径或序列号值，只报告序列号是否存在。
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct HidInterfaceSummary {
     pub vendor_id: u16,
@@ -29,6 +33,8 @@ pub struct HidInterfaceSummary {
 
 impl HidInterfaceSummary {
     /// Classify the HID collection using descriptor data only.
+    ///
+    /// 仅根据描述符数据判断 HID 集合类型。
     pub const fn collection_kind(&self) -> HidCollectionKind {
         HidCollectionKind::from_usage(self.usage_page, self.usage)
     }
@@ -37,6 +43,8 @@ impl HidInterfaceSummary {
     ///
     /// This is only a discovery hint. It does not authorize opening the
     /// interface or sending a report; a curated manifest must still match it.
+    ///
+    /// 可能的厂商命令集合仅是发现提示，不授权打开接口或发送报文，仍须匹配已审阅清单。
     pub const fn is_vendor_defined_collection(&self) -> bool {
         matches!(self.collection_kind(), HidCollectionKind::VendorDefined)
     }
@@ -74,11 +82,15 @@ impl HidCollectionKind {
 }
 
 /// Enumerate Razer HID interfaces without opening them.
+///
+/// 枚举 Razer HID 接口，不打开设备。
 pub fn enumerate_razer() -> Result<Vec<HidInterfaceSummary>, HidEnumerationError> {
     enumerate_vendor(RAZER_VENDOR_ID)
 }
 
 /// Enumerate interfaces for one USB vendor without opening them.
+///
+/// 枚举指定 USB 厂商的 HID 接口，不打开设备。
 pub fn enumerate_vendor(vendor_id: u16) -> Result<Vec<HidInterfaceSummary>, HidEnumerationError> {
     let api = HidApi::new().map_err(HidEnumerationError::Initialize)?;
     let mut interfaces = api

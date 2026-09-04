@@ -1,0 +1,18 @@
+# Summary
+
+- [Welcome](index.md)
+- [Getting started](getting-started.md)
+- [Desktop and languages](application.md)
+- [Command-line tools](cli.md)
+- [Troubleshooting](troubleshooting.md)
+- [Product principles](product-principles.md)
+- [Hardware safety](safety.md)
+- [Architecture](architecture.md)
+- [Device schema](device-schema.md)
+- [Evidence policy](evidence-policy.md)
+- [Source provenance](provenance.md)
+- [Local IPC](ipc.md)
+- [Localization and documentation](localization.md)
+- [Contributing](contributing.md)
+- [Releases](releases.md)
+- [Rust API reference](api.md)
