@@ -305,9 +305,10 @@ def lifecycle_linux(old: dict, current: dict, work: Path, check_settings) -> Non
         require(not (Path("/usr/bin") / name).exists(), f"Debian uninstall left {name}")
     check_settings()
 
-    # Exercise pacman's real ownership database in an isolated root. --nodeps is
-    # intentional: Ubuntu is not an Arch root. An additional Arch container test
-    # below validates actual runtime dependencies on x86_64.
+    # Exercise pacman's real ownership database in an isolated root. Two --nodeps
+    # flags skip dependencies here (one only skips their version constraints):
+    # Ubuntu is not an Arch root. The separate Arch container test installs with
+    # normal dependency checks, and installed binaries still load their libraries.
     pacman_root = work / "pacman-root"
     database = pacman_root / "var/lib/pacman"
     database.mkdir(parents=True)
@@ -318,7 +319,7 @@ def lifecycle_linux(old: dict, current: dict, work: Path, check_settings) -> Non
     try:
         for package, version in [(old["pkg.tar.zst"], "0.0.0"),
                                  (current["pkg.tar.zst"], workspace_version())]:
-            run(*base, "--upgrade", "--nodeps", "--noscriptlet", package)
+            run(*base, "--upgrade", "--nodeps", "--nodeps", "--noscriptlet", package)
             require(captured(*base, "--query", "razers").strip() == f"razers {version}-1",
                     "Arch installed version mismatch")
             verify_linux_tree(pacman_root)
