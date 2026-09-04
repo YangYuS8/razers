@@ -31,6 +31,7 @@ class InstallerConfiguration(unittest.TestCase):
                 self.assertEqual(sum(b["main"] for b in config["binaries"]), 1)
                 self.assertEqual({r["target"] for r in config["resources"]},
                                  {"notices/" + name for name in NOTICES.values()})
+                self.assertNotIn("licenseFile", config, "do not turn notices into a click-through EULA")
                 json.dumps(config)
 
     def test_windows_is_bilingual_per_user_and_preserves_appdata(self):

@@ -73,7 +73,8 @@ def packager_config(target: str, version: str, output: Path) -> dict:
         "homepage": "https://github.com/YangYuS8/razers",
         "description": "Read-only Razer device overview and community support evidence",
         "category": "Utility",
-        "licenseFile": str(ROOT / "LICENSE"),
+        # License texts are shipped below as notices, not turned into mandatory
+        # click-through pages (including an EULA gate before mounting a DMG).
         "binaries": [{"path": name, "main": name == "razers"} for name in BINARY_NAMES],
         "binariesDir": str(ROOT / "target" / target / "release"),
         "outDir": str(output.resolve()),
