@@ -1,0 +1,15 @@
+---
+// SPDX-License-Identifier: GPL-2.0-or-later
+import Default from '@astrojs/starlight/components/LanguageSelect.astro';
+const isNotFound = Astro.locals.starlightRoute.entry.id === '404';
+---
+{isNotFound ? (
+  <nav aria-label="Documentation languages / 文档语言" class="language-links">
+    <a href="/razers/en/" lang="en">English</a>
+    <span aria-hidden="true"> · </span>
+    <a href="/razers/zh-CN/" lang="zh-CN">简体中文</a>
+  </nav>
+) : <Default />}
+<style>
+  .language-links { font-size: var(--sl-text-sm); white-space: nowrap; }
+</style>
