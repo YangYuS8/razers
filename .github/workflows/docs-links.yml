@@ -25,7 +25,8 @@ jobs:
         with:
           args: >-
             --no-progress --max-retries 2 --timeout 20
-            --scheme https --exclude-mail
+            --scheme https --scheme http --exclude-all-private
+            --root-dir '${{ github.workspace }}'
             --exclude '^https://github.com/[^/]+/[^/]+/security/advisories/new$'
             --exclude '^https://github.com/[^/]+/[^/]+/issues/new/choose$'
             'README*.md' 'CONTRIBUTING.md' 'SUPPORT.md' 'SECURITY.md'
