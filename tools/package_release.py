@@ -19,16 +19,21 @@ from pathlib import Path
 
 TAG_PATTERN = re.compile(r"v[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?")
 FIXED_ZIP_TIME = (1980, 1, 1, 0, 0, 0)
+BINARY_NAMES = ("razers", "razers-agent", "razersctl")
+NOTICES = {
+    "README.md": "README.md",
+    "README.zh-CN.md": "README.zh-CN.md",
+    "LICENSE": "LICENSE",
+    "CHANGELOG.md": "CHANGELOG.md",
+    "assets/fonts/OFL.txt": "FONT-LICENSE.txt",
+    "assets/fonts/README.md": "FONT-NOTICE.md",
+}
 
 
 def binary_paths(target: str) -> list[Path]:
     suffix = ".exe" if "windows" in target else ""
     directory = Path("target") / target / "release"
-    return [
-        directory / f"razers{suffix}",
-        directory / f"razers-agent{suffix}",
-        directory / f"razersctl{suffix}",
-    ]
+    return [directory / f"{name}{suffix}" for name in BINARY_NAMES]
 
 
 def copy_payload(staging: Path, binaries: list[Path]) -> None:
@@ -36,11 +41,8 @@ def copy_payload(staging: Path, binaries: list[Path]) -> None:
         destination = staging / binary.name
         shutil.copyfile(binary, destination)
         destination.chmod(0o755)
-    for name in ("README.md", "LICENSE", "CHANGELOG.md"):
-        shutil.copyfile(name, staging / name)
-    shutil.copyfile("README.zh-CN.md", staging / "README.zh-CN.md")
-    shutil.copyfile("assets/fonts/OFL.txt", staging / "FONT-LICENSE.txt")
-    shutil.copyfile("assets/fonts/README.md", staging / "FONT-NOTICE.md")
+    for source, name in NOTICES.items():
+        shutil.copyfile(source, staging / name)
 
 
 def write_tar(archive: Path, staging: Path) -> None:

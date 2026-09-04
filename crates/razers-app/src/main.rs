@@ -53,6 +53,12 @@ fn run_gui(language: Option<Language>) -> eframe::Result {
         viewport: ViewportBuilder::default()
             .with_app_id("io.github.yangyus8.razers")
             .with_title("RazeRS")
+            .with_icon(
+                eframe::icon_data::from_png_bytes(include_bytes!(
+                    "../../../assets/icons/razers.png"
+                ))
+                .expect("bundled application icon is valid"),
+            )
             .with_inner_size([920.0, 680.0])
             .with_min_inner_size([680.0, 520.0]),
         ..Default::default()

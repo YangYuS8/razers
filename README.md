@@ -58,6 +58,14 @@ The current local wire contract is documented in [`docs/src/content/docs/en/ipc.
 
 ## Quick start
 
+Download your platform's installer from [Releases](https://github.com/YangYuS8/razers/releases):
+Windows setup, macOS DMG, or Linux `.deb` / Arch `.pkg.tar.zst`.
+Portable archives remain optional. See the [installation guide](https://yangyus8.top/razers/getting-started/)
+for requirements, trust prompts, upgrades and uninstall instructions. Windows downloads
+are unsigned; macOS apps are ad-hoc signed, not notarized. The app remains a read-only preview.
+
+To build from source:
+
 The workspace requires Rust 1.85 or newer. Linux builds also need `pkg-config`
 and the libudev development files (`libudev-dev` on Debian/Ubuntu; provided by
 `systemd` on Arch Linux).
@@ -134,6 +142,7 @@ Milestone 0 is complete, and descriptor-only enumeration begins Milestone 1:
 - [x] Private child Agent and versioned local JSON-RPC boundary
 - [x] English/Chinese UI, CLI, offline fonts, and persistent language selection
 - [x] Bilingual Starlight handbook and rustdoc with automated GitHub Pages deployment
+- [x] Native installers and portable archives with automated installation lifecycle checks
 - [ ] Safe, read-only identification of the first physical device
 - [ ] Capability-driven desktop UI
 
