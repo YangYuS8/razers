@@ -1,33 +1,72 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import { expect, test } from '@playwright/test';
-import legacyAnchors from './fixtures/mdbook-anchors.json' with { type: 'json' };
-
-test('all pre-migration heading anchors remain addressable', async ({ request }) => {
-  for (const [route, anchors] of Object.entries(legacyAnchors.headings)) {
-    const response = await request.get(route);
-    expect(response.ok(), route).toBe(true);
-    const html = await response.text();
-    for (const anchor of anchors) expect(html, `${route}#${anchor}`).toContain(`id="${anchor}"`);
+test('root is the handbook itself, even without JavaScript', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, javaScriptEnabled: false });
+  try {
+    const page = await context.newPage();
+    const response = await page.goto('/razers/');
+    expect(response?.status()).toBe(200);
+    expect(response?.request().redirectedFrom()).toBeNull();
+    await expect(page).toHaveURL(/\/razers\/$/);
+    await expect(page.getByRole('heading', { name: 'Welcome to RazeRS', exact: true })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Select language' })).toBeVisible();
+    await expect(page.locator('meta[http-equiv="refresh"]')).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Documentation languages and API' })).toHaveCount(0);
+    await page.getByRole('link', { name: 'installation', exact: true }).click();
+    await expect(page).toHaveURL(/\/razers\/getting-started\/$/);
+    await expect(page.getByRole('heading', { name: 'Getting started', exact: true })).toBeVisible();
+  } finally {
+    await context.close();
   }
 });
 
 test('both languages render useful content with a development warning', async ({ page }) => {
-  for (const [locale, title, warning] of [
-    ['en', 'Welcome to RazeRS', 'Development docs'],
-    ['zh-CN', '欢迎使用 RazeRS', '开发版文档'],
+  for (const [path, locale, title, warning] of [
+    ['/razers/', 'en', 'Welcome to RazeRS', 'Development docs'],
+    ['/razers/zh-CN/', 'zh-CN', '欢迎使用 RazeRS', '开发版文档'],
   ]) {
-    await page.goto(`/razers/${locale}/`);
+    await page.goto(path);
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
     await expect(page.locator('.development-notice')).toContainText(warning);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
   }
 });
 
-test('language switch preserves the current chapter', async ({ page }) => {
-  await page.goto('/razers/en/architecture/');
+test('language switch preserves the current chapter in both directions', async ({ page }) => {
+  await page.goto('/razers/architecture/');
   await page.getByRole('combobox', { name: 'Select language' }).selectOption('/razers/zh-CN/architecture/');
   await expect(page).toHaveURL(/\/razers\/zh-CN\/architecture\/$/);
   await expect(page.getByRole('heading', { name: '架构', exact: true })).toBeVisible();
+  await page.getByRole('combobox', { name: '选择语言' }).selectOption('/razers/architecture/');
+  await expect(page).toHaveURL(/\/razers\/architecture\/$/);
+  await expect(page.getByRole('heading', { name: 'Architecture', exact: true })).toBeVisible();
+});
+
+test('home language switch and brand links stay within the handbook', async ({ page }) => {
+  await page.goto('/razers/');
+  await page.getByRole('combobox', { name: 'Select language' }).selectOption('/razers/zh-CN/');
+  await expect(page).toHaveURL(/\/razers\/zh-CN\/$/);
+  await expect(page.getByRole('heading', { name: '欢迎使用 RazeRS', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'RazeRS', exact: true }).click();
+  await expect(page).toHaveURL(/\/razers\/zh-CN\/$/);
+  await page.getByRole('combobox', { name: '选择语言' }).selectOption('/razers/');
+  await expect(page).toHaveURL(/\/razers\/$/);
+  await expect(page.getByRole('heading', { name: 'Welcome to RazeRS', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'RazeRS', exact: true }).click();
+  await expect(page).toHaveURL(/\/razers\/$/);
+});
+
+test('edit links point to actual paired Markdown and MDX sources', async ({ page }) => {
+  for (const [route, source] of [
+    ['/razers/', 'en/index.md'],
+    ['/razers/zh-CN/', 'zh-CN/index.md'],
+    ['/razers/api/', 'en/api.mdx'],
+    ['/razers/zh-CN/api/', 'zh-CN/api.mdx'],
+  ]) {
+    await page.goto(route);
+    await expect(page.locator('a[href*="github.com/YangYuS8/razers/edit/"]'))
+      .toHaveAttribute('href', `https://github.com/YangYuS8/razers/edit/main/docs/src/content/docs/${source}`);
+  }
 });
 
 for (const [query, title] of [
@@ -44,29 +83,32 @@ for (const [query, title] of [
 }
 
 test('English full-text search works', async ({ page }) => {
-  await page.goto('/razers/en/');
+  await page.goto('/razers/');
   await page.getByRole('button', { name: /Search/ }).click();
   await page.getByRole('dialog').getByRole('textbox', { name: 'Search', exact: true }).fill('firmware');
   await expect(page.locator('.pagefind-ui__result-link').first()).toBeVisible();
 });
 
-test('legacy bookmarks and API entry remain usable', async ({ page }) => {
-  await page.goto('/razers/zh-CN/getting-started.html#下载与启动');
-  await expect(page).toHaveURL(/\/razers\/zh-CN\/getting-started\/#/);
-  await expect(page.getByRole('heading', { name: '快速开始', exact: true })).toBeVisible();
-  await expect(page.locator('[id="下载与启动"]')).toBeVisible();
-  for (const [locale, fragment] of [
-    ['en', 'localization-and-documentation-maintenance'],
-    ['zh-CN', '翻译与文档维护'],
-    ['en', 'build-the-site'],
-    ['zh-CN', '构建文档站'],
+test('released desktop Help entrance opens the root handbook', async ({ page }) => {
+  await page.goto('/razers/en/');
+  await expect(page).toHaveURL(/\/razers\/$/);
+  await expect(page.getByRole('heading', { name: 'Welcome to RazeRS', exact: true })).toBeVisible();
+});
+
+test('both API overviews use Starlight and link directly to rustdoc', async ({ page }) => {
+  for (const [path, title, search] of [
+    ['/razers/api/', 'Rust API reference', 'Search'],
+    ['/razers/zh-CN/api/', 'Rust API 参考', '搜索'],
   ]) {
-    await page.goto(`/razers/${locale}/localization.html#${fragment}`);
-    await expect(page).toHaveURL(new RegExp(`/razers/${locale}/localization/#`));
-    await expect(page.locator(`[id="${fragment}"]`)).toBeAttached();
+    await page.goto(path);
+    await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: new RegExp(search) })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'razers-transport', exact: true }))
+      .toHaveAttribute('href', '/razers/api/razers_transport/index.html');
+    await page.getByRole('link', { name: 'razers-transport', exact: true }).click();
+    await expect(page).toHaveURL(/\/razers\/api\/razers_transport\/index\.html$/);
+    await expect(page.locator('#main-content')).toContainText('razers_transport');
   }
-  await page.goto('/razers/api/');
-  await expect(page.getByRole('link', { name: 'razers-transport', exact: true })).toBeVisible();
 });
 
 test('Chinese search labels and empty results are translated', async ({ page }) => {
@@ -103,6 +145,22 @@ test('mobile layout has navigation and no horizontal page overflow', async ({ pa
   await page.screenshot({ path: testInfo.outputPath('mobile-handbook.png'), fullPage: true });
   await page.getByRole('button', { name: /菜单|Menu/ }).click();
   await expect(page.getByRole('link', { name: '不持有硬件也能贡献证据', exact: true })).toBeVisible();
+});
+
+test('mobile root entrances expose content and the site menu', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const [path, title, menu, firstRun] of [
+    ['/razers/', 'Welcome to RazeRS', 'Menu', 'Your first read-only session'],
+    ['/razers/zh-CN/', '欢迎使用 RazeRS', '菜单', '完成第一次只读体验'],
+  ]) {
+    await page.goto(path);
+    await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`${menu}-root.png`), fullPage: true });
+    await page.getByRole('button', { name: menu, exact: true }).click();
+    await page.getByRole('link', { name: firstRun, exact: true }).click();
+    await expect(page.getByRole('heading', { name: firstRun, exact: true })).toBeVisible();
+  }
 });
 
 test('reading and search load no third-party resources', async ({ page }, testInfo) => {

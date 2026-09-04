@@ -107,7 +107,7 @@ language selector switches immediately and saves your choice. Use `--lang en`,
 selection. A bundled Chinese font works offline on all supported desktop platforms.
 Protocol fields and original diagnostic details are intentionally not translated.
 
-Read the [English handbook](https://yangyus8.top/razers/en/),
+Read the [English handbook](https://yangyus8.top/razers/),
 [中文手册](https://yangyus8.top/razers/zh-CN/), and
 [Rust API reference](https://yangyus8.top/razers/api/). The Starlight handbook and rustdoc
 are built and checked for translations, links, anchors, search, and mobile navigation

@@ -1,0 +1,7 @@
+---
+// SPDX-License-Identifier: GPL-2.0-or-later
+import { workspaceLibraries } from '../../scripts/workspace-libraries.mjs';
+---
+<ul>
+  {workspaceLibraries.map(({ name, href }) => <li><a href={href}><code>{name}</code></a></li>)}
+</ul>

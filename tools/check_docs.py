@@ -20,7 +20,8 @@ LOCALES = ("en", "zh-CN")
 def check_chapters(docs: Path) -> None:
     """Starlight page pairs replace the old SUMMARY.md lists."""
     content = docs / "src/content/docs"
-    pages = [{path.relative_to(content / locale) for path in (content / locale).rglob("*.md")}
+    pages = [{path.relative_to(content / locale) for path in (content / locale).rglob("*")
+              if path.suffix in {".md", ".mdx"}}
              for locale in LOCALES]
     if not pages[0] or pages[0] != pages[1]:
         raise ValueError(f"English/Chinese pages missing or unmatched: {pages[0] ^ pages[1]}")
@@ -37,7 +38,7 @@ def translation_gaps(changed: set[str]) -> list[str]:
     for path in changed:
         for locale, other in [("en", "zh-CN"), ("zh-CN", "en")]:
             prefix = f"{CONTENT.as_posix()}/{locale}/"
-            if path.startswith(prefix) and path.endswith(".md"):
+            if path.startswith(prefix) and Path(path).suffix in {".md", ".mdx"}:
                 counterpart = f"{CONTENT.as_posix()}/{other}/{path.removeprefix(prefix)}"
                 if counterpart not in changed:
                     gaps.add(counterpart)

@@ -35,4 +35,4 @@ or pass explicit paths. The desktop Agent embeds its catalogs and does not need 
 Errors use exit code 2, translated context and original diagnostic detail where useful.
 
 `razers-agent --help --lang zh-CN` explains the service entry point.
-`razers-agent --stdio` always speaks the same [IPC protocol](/razers/en/ipc/), regardless of locale.
+`razers-agent --stdio` always speaks the same [IPC protocol](/razers/ipc/), regardless of locale.

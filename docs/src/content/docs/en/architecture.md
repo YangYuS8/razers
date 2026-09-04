@@ -71,7 +71,7 @@ The evidence catalog supplies known identities and reusable implementation resul
 A reviewed, curated manifest may select protocol and capability drivers and enable
 experimental behavior without requiring the maintainer to own that device. A
 verification record makes the narrower, stronger claim that RazeRS itself passed on
-a stated platform and firmware. See [`evidence-policy.md`](/razers/en/evidence-policy/).
+a stated platform and firmware. See [`evidence-policy.md`](/razers/evidence-policy/).
 
 ## Concurrency model
 
@@ -129,5 +129,5 @@ not been built yet.
 A future persistent Agent may use a current-user Unix domain socket on Linux/macOS
 and a current-user named pipe on Windows, but only after its ownership, permissions,
 peer authentication, and lifecycle are implemented and tested. Normal IPC must never
-expose arbitrary raw hardware writes. See [`ipc.md`](/razers/en/ipc/) for the current wire
+expose arbitrary raw hardware writes. See [`ipc.md`](/razers/ipc/) for the current wire
 contract.

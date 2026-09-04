@@ -35,7 +35,7 @@ Dependabot 同时维护固定值和版本注释。
 
 Documentation 工作流在每个 PR 构建双语 Starlight 和库 rustdoc，检查页面配对、
 翻译对应文件的改动、本地链接及锚点，拒绝 rustdoc 警告，并执行语言切换、中英文搜索、
-旧链接与移动端导航的浏览器回归测试。
+根入口、API 导航与移动端导航的浏览器回归测试。
 只有 `main` 通过 OIDC 和 `github-pages` 环境部署，PR 不持有 Pages 写权限。
 单纯文档变更不需要提升应用版本或发布应用。
 

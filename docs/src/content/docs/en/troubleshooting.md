@@ -33,7 +33,7 @@ If reporting a rendering issue, include the language, scaling, OS and a redacted
 
 Current archives are not signed installers. Verify source and SHA-256 instead of
 disabling OS security globally. A glibc mismatch may require building from source
-on the target system. See [getting started](/razers/en/getting-started/).
+on the target system. See [getting started](/razers/getting-started/).
 
 Report issues at [GitHub Issues](https://github.com/YangYuS8/razers/issues).
 Never publish serial numbers, raw input traffic, access tokens or private diagnostics.

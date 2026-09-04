@@ -16,7 +16,7 @@ export default defineConfig({
   },
   webServer: deployedURL ? undefined : {
     command: 'pnpm exec astro preview --host 127.0.0.1 --port 4321',
-    url: 'http://127.0.0.1:4321/razers/en/',
+    url: 'http://127.0.0.1:4321/razers/',
     reuseExistingServer: !process.env.CI,
     env: { ASTRO_TELEMETRY_DISABLED: '1' },
   },

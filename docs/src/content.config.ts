@@ -5,8 +5,8 @@ import { docsSchema, i18nSchema } from '@astrojs/starlight/schema';
 
 export const collections = {
   docs: defineCollection({
-    // Astro's default slugger lowercases paths, but our published locale is zh-CN.
-    loader: docsLoader({ generateId: ({ entry }) => entry.replace(/\.(md|mdx)$/, '').replace(/\/index$/, '') }),
+    // Keep paired source folders; English is the root locale. Preserve zh-CN case.
+    loader: docsLoader({ generateId: ({ entry }) => entry.replace(/^en\//, '').replace(/\.(md|mdx)$/, '').replace(/\/index$/, '') }),
     schema: docsSchema(),
   }),
   i18n: defineCollection({ loader: i18nLoader(), schema: i18nSchema() }),

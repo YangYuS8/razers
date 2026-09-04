@@ -2,7 +2,7 @@
 
 Thank you for helping build safe, verifiable support for Razer hardware.
 
-[中文贡献指南](docs/src/content/docs/zh-CN/contributing.md) · [Online handbook](https://yangyus8.top/razers/en/)
+[中文贡献指南](docs/src/content/docs/zh-CN/contributing.md) · [Online handbook](https://yangyus8.top/razers/)
 
 ## Development setup
 

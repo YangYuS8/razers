@@ -27,6 +27,26 @@ class DocumentationChecks(unittest.TestCase):
     def test_repository_chapters_match(self):
         check_chapters(Path(__file__).resolve().parents[2] / "docs")
 
+    def test_mdx_pages_require_translations_and_frontmatter(self):
+        self.assertEqual(translation_gaps({"docs/src/content/docs/en/api.mdx"}),
+                         ["docs/src/content/docs/zh-CN/api.mdx"])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for locale in ["en", "zh-CN"]:
+                folder = root / "src/content/docs" / locale
+                folder.mkdir(parents=True)
+                (folder / "index.md").write_text('---\ntitle: Home\ndescription: Home\n---\n')
+            english = root / "src/content/docs/en/api.mdx"
+            chinese = root / "src/content/docs/zh-CN/api.mdx"
+            english.write_text('---\ntitle: API\ndescription: API\n---\n')
+            with self.assertRaisesRegex(ValueError, "missing or unmatched"):
+                check_chapters(root)
+            chinese.write_text('No frontmatter')
+            with self.assertRaisesRegex(ValueError, "missing page title/description"):
+                check_chapters(root)
+            chinese.write_text(english.read_text())
+            check_chapters(root)
+
     def test_single_language_edits_warn_without_requiring_artificial_changes(self):
         output = io.StringIO()
         with patch("check_docs.subprocess.run"), patch("check_docs.subprocess.check_output",

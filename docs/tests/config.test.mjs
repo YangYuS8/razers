@@ -2,16 +2,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
-import { legacyChapters, legacyRedirects } from '../scripts/legacy-routes.mjs';
+import { workspaceLibraries } from '../scripts/workspace-libraries.mjs';
 
-test('every shipped mdBook page has a same-language redirect', () => {
-  const redirects = legacyRedirects();
-  assert.equal(Object.keys(redirects).length, legacyChapters.length * 2);
-  for (const locale of ['en', 'zh-CN']) {
-    assert.equal(redirects[`/${locale}/index.html`], `/${locale}/`);
-    for (const chapter of legacyChapters.filter(name => name !== 'index')) {
-      assert.equal(redirects[`/${locale}/${chapter}.html`], `/${locale}/${chapter}/`);
-    }
+test('API library list is generated from documented workspace targets', () => {
+  assert.ok(workspaceLibraries.length > 0);
+  assert.equal(new Set(workspaceLibraries.map(item => item.href)).size, workspaceLibraries.length);
+  assert.ok(workspaceLibraries.some(item => item.name === 'razers-transport'));
+  for (const item of workspaceLibraries) {
+    assert.match(item.name, /^razers-/);
+    assert.match(item.href, /^\/razers\/api\/razers_\w+\/index\.html$/);
   }
 });
 

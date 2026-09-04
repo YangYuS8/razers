@@ -8,7 +8,7 @@ the application; GitHub participation uses GitHub's own account system.
 
 - [Ask a question or suggest a feature](https://github.com/YangYuS8/razers/issues/new/choose).
   Documentation and translation feedback are welcome; hardware ownership is not required.
-- [Contribute source evidence](/razers/en/contribute-evidence/) separately from hardware reports.
+- [Contribute source evidence](/razers/contribute-evidence/) separately from hardware reports.
 - Report reproducible bugs with version, platform, expected result and reproduction steps.
 - Report vulnerabilities and hardware-safety problems **privately** through
   [GitHub security reporting](https://github.com/YangYuS8/razers/security/advisories/new).

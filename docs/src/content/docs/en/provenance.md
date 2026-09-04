@@ -79,7 +79,7 @@ that imports cannot silently enable hardware operations. A reviewed manifest may
 select a typed driver after source reconciliation and replay testing. RazeRS
 verification records add platform and firmware-specific confidence rather than
 acting as a prerequisite for all useful support. The acceptance and disagreement
-rules are defined in [`evidence-policy.md`](/razers/en/evidence-policy/).
+rules are defined in [`evidence-policy.md`](/razers/evidence-policy/).
 
 ## OpenRGB lighting catalog
 
