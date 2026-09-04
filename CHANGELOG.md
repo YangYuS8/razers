@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/YangYuS8/razers/compare/v0.3.0...v0.4.0) (2026-09-04)
+
+
+### Features
+
+* add native installers with automated lifecycle checks ([#16](https://github.com/YangYuS8/razers/issues/16)) ([c8d8234](https://github.com/YangYuS8/razers/commit/c8d8234131e703541d8526439840007004ef022b))
+
 ## [0.3.0](https://github.com/YangYuS8/razers/compare/v0.2.0...v0.3.0) (2026-09-04)
 
 
