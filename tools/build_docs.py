@@ -26,7 +26,7 @@ def run(*args: str, env: dict[str, str] | None = None) -> None:
 def main() -> None:
     check_chapters(ROOT / "docs")
     mdbook = os.environ.get("MDBOOK", "mdbook")
-    pinned = (ROOT / "tools/docs-requirements.txt").read_text().split("mdbook=")[1].strip()
+    pinned = tomllib.loads((ROOT / "tools/docs-tools.toml").read_text())["mdbook"]
     version = subprocess.check_output([mdbook, "--version"], text=True).strip()
     if version != f"mdbook v{pinned}":
         raise SystemExit(f"expected mdbook v{pinned}, got {version}")

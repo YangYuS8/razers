@@ -16,7 +16,7 @@ cargo +1.85.0 check --workspace --all-features --locked
 python tools/build_docs.py
 ```
 
-mdBook 版本固定在 `tools/docs-requirements.txt`，也可用 `MDBOOK` 指向对应版本的程序。
+mdBook 版本固定在 `tools/docs-tools.toml`，也可用 `MDBOOK` 指向对应版本的程序。
 构建生成 `target/site/en`、`zh-CN` 和 `api`，不需要联网下载翻译。
 使用 `python -m http.server 8000 --directory target/site`，然后打开
 `http://localhost:8000/` 本地预览；线上 404 页按 `/razers/` 项目路径定位资源。
