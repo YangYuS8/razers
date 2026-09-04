@@ -37,7 +37,7 @@ warnings on every PR. Pushes to `main` deploy the same output to GitHub Pages us
 OIDC and the `github-pages` environment. Pull requests never receive Pages write
 permission. This is the latest development documentation, not a version archive;
 `build-info.json` records the source commit, workspace version, and mdBook version.
-mdBook is pinned in `tools/docs-requirements.txt`.
+mdBook is pinned in `tools/docs-tools.toml`.
 
 If an artifact runner has a transient failure, rerun the failed jobs. The workflow
 can also be dispatched with an existing `vX.Y.Z` tag to rebuild and replace that

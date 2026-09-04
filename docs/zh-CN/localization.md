@@ -18,7 +18,7 @@ v1 新增可选的 `evidence_source_count` 字段支持本地化的证据数量�
 
 ## 构建文档站
 
-按照 `tools/docs-requirements.txt` 固定的版本安装 mdBook：
+按照 `tools/docs-tools.toml` 固定的版本安装 mdBook：
 
 ```bash
 cargo install mdbook --version 0.5.4 --locked

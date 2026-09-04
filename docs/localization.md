@@ -18,7 +18,7 @@ evidence messages while preserving compatibility with older clients.
 
 ## Build the site
 
-Install mdBook using the version in `tools/docs-requirements.txt`:
+Install mdBook using the version in `tools/docs-tools.toml`:
 
 ```bash
 cargo install mdbook --version 0.5.4 --locked

@@ -17,7 +17,7 @@ cargo +1.85.0 check --workspace --all-features --locked
 python tools/build_docs.py
 ```
 
-Use the mdBook version pinned in `tools/docs-requirements.txt` (or provide that
+Use the mdBook version pinned in `tools/docs-tools.toml` (or provide that
 binary through `MDBOOK`). The build generates `target/site/en`, `zh-CN` and `api`
 without fetching translations. Preview with
 `python -m http.server 8000 --directory target/site`, then open

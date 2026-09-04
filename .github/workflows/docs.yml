@@ -27,7 +27,7 @@ jobs:
           key: documentation
       - name: Install pinned mdBook
         run: |
-          version=$(sed -n 's/^mdbook=//p' tools/docs-requirements.txt)
+          version=$(python -c 'import tomllib; print(tomllib.load(open("tools/docs-tools.toml", "rb"))["mdbook"])')
           if [ "$(target/mdbook/bin/mdbook --version 2>/dev/null)" != "mdbook v$version" ]; then
             CARGO_TARGET_DIR=target/mdbook-build cargo install mdbook --version "$version" --locked --root target/mdbook --force
           fi
