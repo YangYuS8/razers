@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import struct
 import sys
 import tempfile
 import unittest
@@ -70,6 +71,19 @@ class InstallerConfiguration(unittest.TestCase):
         self.assertEqual(config["macos"]["signingIdentity"], "-")
         self.assertNotIn("notarizationCredentials", config["macos"])
 
+    def test_large_png_icons_have_retina_density_for_icns(self):
+        config = packager_config("aarch64-apple-darwin", "0.4.0", Path("out"))
+        for name in config["icons"]:
+            path = Path(name)
+            if path.suffix != ".png":
+                continue
+            width, height = struct.unpack(">II", path.read_bytes()[16:24])
+            self.assertEqual(width, height)
+            if width == 1024:
+                self.assertTrue(path.stem.endswith("@2x"), "1024px ICNS requires Retina density")
+            else:
+                self.assertIn(width, [16, 32, 48, 64, 128, 256, 512])
+
 
 class InstallerValidation(unittest.TestCase):
     def test_nsis_directory_parameter_stays_last_and_unquoted(self):
@@ -133,6 +147,26 @@ class InstallerValidation(unittest.TestCase):
 
 @unittest.skipUnless(os.environ.get("RAZERS_TEST_PACKAGER"), "optional local packaging-tool integration")
 class RealDebPackaging(unittest.TestCase):
+    def test_mac_bundle_icons_encode_with_the_same_packager(self):
+        with tempfile.TemporaryDirectory(prefix="razers-app-test-") as directory:
+            work = Path(directory)
+            for name in BINARY_NAMES:
+                (work / name).write_bytes(b"fixture binary")
+            config = packager_config("aarch64-apple-darwin", "0.4.0", work / "out")
+            config["binariesDir"] = str(work)
+            config["formats"] = ["app"]
+            # This cross-platform fixture checks the real icon encoder and bundle
+            # layout, not Mach-O validity or signing (covered by native CI).
+            config["macos"].pop("signingIdentity")
+            path = work / "packager.json"
+            path.write_text(json.dumps(config), encoding="utf-8")
+            subprocess.run([str(Path(os.environ["RAZERS_TEST_PACKAGER"]).resolve()), "--config", str(path)], check=True)
+            bundle = work / "out/RazeRS.app/Contents"
+            for name in BINARY_NAMES:
+                self.assertTrue((bundle / "MacOS" / name).is_file())
+            icon, = (bundle / "Resources").glob("*.icns")
+            self.assertTrue(icon.read_bytes().startswith(b"icns"))
+
     def test_packager_accepts_configuration_and_produces_installable_payload(self):
         with tempfile.TemporaryDirectory(prefix="razers-deb-test-") as directory:
             work = Path(directory)

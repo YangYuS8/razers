@@ -21,6 +21,8 @@ RazeRS.app 的 macOS DMG、Debian 包和 Arch 二进制包，同时保留确定�
 
 构建器临时失败时重跑失败作业。也可用已有标签手动触发 Release 工作流，
 重建并替换该版本资产，不修改版本和变更日志。
+此入口支持包含安装包工具的标签；较早的纯归档标签需使用当时的工作流，
+不在当前打包器中额外维护兼容层。
 
 ## 安装包自动化与边界
 
@@ -59,7 +61,7 @@ python tools/package_installers.py --target x86_64-unknown-linux-gnu --packager 
 python tools/check_installers.py --target x86_64-unknown-linux-gnu
 ```
 
-本地检查只解包验证，不安装。Linux 打包还需 `dpkg-deb`、`makepkg`、`fakeroot` 和 `zstd`。
+本地检查只解包验证，不安装。Linux 打包还需 `dpkg-deb`、`makepkg`、`fakeroot`、`bsdtar` 和 `zstd`。
 Windows 辅助工具名带 `.exe`，编译应用时需将目标专用 Rust flags 设为
 `-C target-feature=+crt-static`；macOS 编译前设置 `MACOSX_DEPLOYMENT_TARGET=11.0`。
 完整的平台命令以 CI 为准。

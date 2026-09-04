@@ -29,8 +29,8 @@ def require(condition: bool, message: str) -> None:
         raise RuntimeError(message)
 
 
-def captured(*args: str | Path) -> str:
-    return subprocess.check_output([str(arg) for arg in args], text=True, encoding="utf-8")
+def captured(*args: str | Path, **kwargs) -> str:
+    return subprocess.check_output([str(arg) for arg in args], text=True, encoding="utf-8", **kwargs)
 
 
 def verify_checksum(artifact: Path) -> None:
@@ -196,7 +196,7 @@ def user_settings_marker():
     marker = directory / "app.ron"
     # Never overwrite settings, even if invoked on a contaminated runner.
     with marker.open("x", encoding="utf-8") as output:
-        output.write('("language": "zh-CN")\n')
+        output.write('{"language": "zh-CN"}\n')
     expected = marker.read_bytes()
     try:
         yield lambda: require(marker.read_bytes() == expected, "installer changed user preferences")
@@ -246,16 +246,19 @@ def lifecycle_windows(old: Path, current: Path, work: Path, check_settings) -> N
         require("vcruntime" not in imports and "msvcp" not in imports,
                 "Windows binary depends on a non-bundled Visual C++ runtime")
     # The Start Menu shortcut must resolve to the GUI, with its real icon.
-    run("powershell", "-NoProfile", "-Command",
+    shortcut = json.loads(captured("powershell", "-NoProfile", "-Command",
         "$w = New-Object -ComObject WScript.Shell; "
         "$links = Get-ChildItem ([Environment]::GetFolderPath('StartMenu')) -Recurse -Filter RazeRS.lnk; "
         "if (!$links) { throw 'Missing Start Menu shortcut' }; "
         "$s = $w.CreateShortcut($links[0].FullName); "
-        "if ($s.TargetPath -ne $env:RAZERS_TEST_EXE) { throw 'Wrong shortcut target' }; "
         "$v = (Get-Item $env:RAZERS_TEST_EXE).VersionInfo; "
-        "if ($v.ProductName -ne 'RazeRS' -or $v.ProductVersion -ne $env:RAZERS_TEST_VERSION) { throw 'Wrong PE resources' }",
-        env=dict(os.environ, RAZERS_TEST_EXE=str(destination / "razers.exe"),
-                 RAZERS_TEST_VERSION=workspace_version()))
+        "@{TargetPath=$s.TargetPath; ProductName=$v.ProductName; ProductVersion=$v.ProductVersion} | ConvertTo-Json -Compress",
+        env=dict(os.environ, RAZERS_TEST_EXE=str(destination / "razers.exe"))))
+    # WScript expands an 8.3 path such as RUNNER~1. Compare file identity, not
+    # different spellings of the same installed executable.
+    require(Path(shortcut["TargetPath"]).samefile(destination / "razers.exe"), "wrong Start Menu target")
+    require(shortcut["ProductName"] == "RazeRS" and shortcut["ProductVersion"] == workspace_version(),
+            "Windows executable resource version mismatch")
     foreign = destination / "unrelated-file.txt"
     foreign.write_text("keep me", encoding="utf-8")
     # _?= runs synchronously instead of launching a temporary uninstaller child.

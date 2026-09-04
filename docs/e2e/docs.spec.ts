@@ -78,7 +78,22 @@ for (const [query, title] of [
     await page.goto('/razers/zh-CN/');
     await page.getByRole('button', { name: /搜索|Search/ }).click();
     await page.getByRole('dialog').getByRole('textbox', { name: '搜索', exact: true }).fill(query);
-    await expect(page.locator('.pagefind-ui__result-link').filter({ hasText: title }).first()).toBeVisible();
+    const links = page.locator('.pagefind-ui__result-link');
+    const result = links.filter({ hasText: title }).first();
+    await expect(links.first()).toBeVisible();
+    // New handbook chapters can move a relevant result beyond Pagefind's first
+    // five entries. Exercise real pagination; still require the specific page.
+    for (let pages = 0; pages < 5 && !(await result.isVisible()); pages++) {
+      const more = page.getByRole('dialog').getByRole('button', { name: '加载更多结果', exact: true });
+      if (!(await more.isVisible())) break;
+      const before = await links.count();
+      await more.click();
+      await expect.poll(() => links.count()).toBeGreaterThan(before);
+    }
+    await expect(result).toBeVisible();
+    await result.click();
+    await expect(page).toHaveURL(/\/razers\/zh-CN\//);
+    await expect(page.getByRole('heading', { name: title, exact: true }).first()).toBeVisible();
   });
 }
 

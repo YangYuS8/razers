@@ -80,7 +80,7 @@ python tools/check_installers.py --target x86_64-unknown-linux-gnu
 ```
 
 Local inspection only extracts and checks packages; it never installs them. Linux
-packaging also needs `dpkg-deb`, `makepkg`, `fakeroot`, and `zstd`. On Windows use the
+packaging also needs `dpkg-deb`, `makepkg`, `fakeroot`, `bsdtar`, and `zstd`. On Windows use the
 helper's `.exe` name and set the native build's target-specific Rust flags to
 `-C target-feature=+crt-static`; on macOS set `MACOSX_DEPLOYMENT_TARGET=11.0` before
 compiling. CI holds the authoritative platform commands.
@@ -108,6 +108,8 @@ See [localization maintenance](/razers/localization/) for the authoring workflow
 If an artifact runner has a transient failure, rerun the failed jobs. The workflow
 can also be dispatched with an existing `vX.Y.Z` tag to rebuild and replace that
 release's assets without changing the version or changelog.
+That dispatch supports tags containing the installer tooling; older archive-only
+tags need their original workflow, not a compatibility layer in the current packager.
 
 ## Dependency updates
 

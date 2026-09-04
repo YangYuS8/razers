@@ -78,7 +78,8 @@ def packager_config(target: str, version: str, output: Path) -> dict:
         "binariesDir": str(ROOT / "target" / target / "release"),
         "outDir": str(output.resolve()),
         "targetTriple": target,
-        "icons": [str(ROOT / "assets/icons/razers.png"), str(ROOT / "assets/icons/razers.ico")],
+        "icons": [str(ROOT / "assets/icons" / name)
+                  for name in ("razers.png", "razers@2x.png", "razers.ico")],
         "resources": [
             {"src": str(ROOT / source), "target": f"notices/{name}"}
             for source, name in NOTICES.items()
