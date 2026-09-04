@@ -23,6 +23,7 @@ export default defineConfig({
     components: {
       PageTitle: './src/components/PageTitle.astro',
       Head: './src/components/Head.astro',
+      LanguageSelect: './src/components/LanguageSelect.astro',
     },
     sidebar: [
       { label: 'Start here', translations: { 'zh-CN': '开始使用' }, items: [

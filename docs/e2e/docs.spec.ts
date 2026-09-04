@@ -87,6 +87,10 @@ test('not-found page offers both handbook entrances', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Page not found / 页面未找到', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: '中文首页', exact: true })).toHaveAttribute('href', '/razers/zh-CN/');
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
+  await page.getByRole('navigation', { name: 'Documentation languages / 文档语言' })
+    .getByRole('link', { name: '简体中文', exact: true }).click();
+  await expect(page).toHaveURL(/\/razers\/zh-CN\/$/);
+  await expect(page.getByRole('heading', { name: '欢迎使用 RazeRS', exact: true })).toBeVisible();
 });
 
 test('mobile layout has navigation and no horizontal page overflow', async ({ page }, testInfo) => {

@@ -78,6 +78,8 @@ class Links(HTMLParser):
         for key, value in attrs:
             if key in {"href", "src"} and value:
                 self.references.append(value)
+            if tag == "option" and key == "value" and value and value.startswith("/razers/"):
+                self.references.append(value)
             if value and (key == "id" or (tag == "a" and key == "name")):
                 self.ids.add(value)
 

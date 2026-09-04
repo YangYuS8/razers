@@ -52,6 +52,13 @@ class DocumentationChecks(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "missing"):
                 check_site(root)
 
+    def test_language_selector_destinations_are_checked(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "index.html").write_text('<select><option value="/razers/zh-CN/404/">中文</option></select>')
+            with self.assertRaisesRegex(ValueError, "missing /razers/zh-CN/404/"):
+                check_site(root)
+
     def test_directory_links_and_fragments(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

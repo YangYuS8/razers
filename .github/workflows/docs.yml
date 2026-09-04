@@ -40,6 +40,14 @@ jobs:
       - name: Install pinned pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
         timeout-minutes: 5
+        env:
+          # npm's default five-minute request timeout can consume the entire
+          # bootstrap budget on one stalled registry/audit request. Keep retries
+          # and integrity/audit checks, but bound each network attempt.
+          npm_config_fetch_timeout: '60000'
+          npm_config_fetch_retries: '2'
+          npm_config_fetch_retry_mintimeout: '1000'
+          npm_config_fetch_retry_maxtimeout: '10000'
         with:
           package_json_file: docs/package.json
           cache: true
