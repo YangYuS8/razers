@@ -1,5 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import { expect, test } from '@playwright/test';
+import legacyAnchors from './fixtures/mdbook-anchors.json' with { type: 'json' };
+
+test('all pre-migration heading anchors remain addressable', async ({ request }) => {
+  for (const [route, anchors] of Object.entries(legacyAnchors.headings)) {
+    const response = await request.get(route);
+    expect(response.ok(), route).toBe(true);
+    const html = await response.text();
+    for (const anchor of anchors) expect(html, `${route}#${anchor}`).toContain(`id="${anchor}"`);
+  }
+});
 
 test('both languages render useful content with a development warning', async ({ page }) => {
   for (const [locale, title, warning] of [
@@ -45,6 +55,16 @@ test('legacy bookmarks and API entry remain usable', async ({ page }) => {
   await expect(page).toHaveURL(/\/razers\/zh-CN\/getting-started\/#/);
   await expect(page.getByRole('heading', { name: '快速开始', exact: true })).toBeVisible();
   await expect(page.locator('[id="下载与启动"]')).toBeVisible();
+  for (const [locale, fragment] of [
+    ['en', 'localization-and-documentation-maintenance'],
+    ['zh-CN', '翻译与文档维护'],
+    ['en', 'build-the-site'],
+    ['zh-CN', '构建文档站'],
+  ]) {
+    await page.goto(`/razers/${locale}/localization.html#${fragment}`);
+    await expect(page).toHaveURL(new RegExp(`/razers/${locale}/localization/#`));
+    await expect(page.locator(`[id="${fragment}"]`)).toBeAttached();
+  }
   await page.goto('/razers/api/');
   await expect(page.getByRole('link', { name: 'razers-transport', exact: true })).toBeVisible();
 });

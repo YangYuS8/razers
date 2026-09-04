@@ -42,6 +42,8 @@ semantic equivalence: reviewers must still check meaning. A warning can legitima
 remain for a language-only typo after reviewing the companion; no artificial edit,
 status comment, or special label is required to silence it.
 
+<span id="build-the-site" aria-hidden="true" data-pagefind-ignore></span>
+
 ## Build and preview
 
 Install the Node LTS major in `docs/.node-version` and the exact pnpm version in

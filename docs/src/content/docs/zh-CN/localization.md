@@ -33,6 +33,8 @@ rustdoc 保留独立搜索和上游英文导航，项目 API 注释与 API 入�
 此检查只能发现漏同步，不能证明语义一致，仍需审阅译文。
 如果只是单语言错字，检查另一语言后可以保留提醒，无需通过无意义改动、状态注释或特殊标签消除它。
 
+<span id="构建文档站" aria-hidden="true" data-pagefind-ignore></span>
+
 ## 构建与预览
 
 准备 `docs/.node-version` 指定的 Node LTS 主版本，以及 `docs/package.json` 中固定的

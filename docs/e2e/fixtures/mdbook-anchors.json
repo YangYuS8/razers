@@ -1,0 +1,190 @@
+{
+  "sourceCommit": "960a20c12552d25c940a90e15266df5a66cb0901",
+  "headings": {
+    "/razers/en/": [
+      "welcome-to-razers"
+    ],
+    "/razers/en/api/": [
+      "rust-api-reference"
+    ],
+    "/razers/en/application/": [
+      "desktop-and-languages",
+      "language-selection",
+      "privacy-and-support"
+    ],
+    "/razers/en/architecture/": [
+      "architecture",
+      "boundaries",
+      "device-model",
+      "concurrency-model",
+      "workspace-evolution",
+      "local-ipc-direction"
+    ],
+    "/razers/en/cli/": [
+      "command-line-tools"
+    ],
+    "/razers/en/contributing/": [
+      "contributing"
+    ],
+    "/razers/en/device-schema/": [
+      "device-registry-schema-v1",
+      "required-product-fields",
+      "connections",
+      "capabilities",
+      "evidence",
+      "verification"
+    ],
+    "/razers/en/evidence-policy/": [
+      "upstream-evidence-policy",
+      "what-upstream-evidence-can-establish",
+      "evidence-threshold",
+      "resolving-disagreements",
+      "assessment-workflow",
+      "confidence-and-user-facing-claims"
+    ],
+    "/razers/en/getting-started/": [
+      "getting-started",
+      "download",
+      "build-from-source"
+    ],
+    "/razers/en/ipc/": [
+      "local-ipc-protocol",
+      "versioning",
+      "methods",
+      "privacy-and-future-transports"
+    ],
+    "/razers/en/localization/": [
+      "localization-and-documentation-maintenance",
+      "build-the-site"
+    ],
+    "/razers/en/product-principles/": [
+      "product-principles",
+      "user-contract",
+      "interaction-standards",
+      "functional-completeness",
+      "current-boundary"
+    ],
+    "/razers/en/provenance/": [
+      "source-provenance",
+      "openrazer-baseline",
+      "generated-evidence-catalog",
+      "classic-request-response-behavior",
+      "evidence-versus-verification",
+      "openrgb-lighting-catalog",
+      "irazer-cross-platform-catalog",
+      "bundled-chinese-font"
+    ],
+    "/razers/en/releases/": [
+      "releases-and-dependency-maintenance",
+      "release-flow",
+      "documentation-publishing",
+      "dependency-updates"
+    ],
+    "/razers/en/safety/": [
+      "hardware-safety-policy",
+      "command-risk-classes",
+      "raw-packet-tooling",
+      "diagnostics-and-privacy",
+      "current-milestone-guarantee"
+    ],
+    "/razers/en/troubleshooting/": [
+      "troubleshooting",
+      "no-devices-found",
+      "controls-are-unavailable",
+      "agent-startup-or-protocol-error",
+      "language-or-font-problems",
+      "trust-prompts-and-older-linux-systems"
+    ],
+    "/razers/zh-CN/": [
+      "欢迎使用-razers"
+    ],
+    "/razers/zh-CN/api/": [
+      "rust-api-参考"
+    ],
+    "/razers/zh-CN/application/": [
+      "桌面应用与语言",
+      "切换语言",
+      "隐私和支持状态"
+    ],
+    "/razers/zh-CN/architecture/": [
+      "架构",
+      "职责边界",
+      "设备模型",
+      "并发与持久化",
+      "当前工作区",
+      "本地-ipc"
+    ],
+    "/razers/zh-CN/cli/": [
+      "命令行工具"
+    ],
+    "/razers/zh-CN/contributing/": [
+      "参与贡献"
+    ],
+    "/razers/zh-CN/device-schema/": [
+      "设备注册表格式-v1",
+      "产品字段",
+      "连接",
+      "能力与持久化",
+      "证据",
+      "验证记录"
+    ],
+    "/razers/zh-CN/evidence-policy/": [
+      "上游证据政策",
+      "证据能支持什么",
+      "实验性能力的门槛",
+      "处理差异",
+      "cli-评估流程",
+      "面向用户的支持声明"
+    ],
+    "/razers/zh-CN/getting-started/": [
+      "快速开始",
+      "下载与启动",
+      "从源码构建"
+    ],
+    "/razers/zh-CN/ipc/": [
+      "本地-ipc-协议",
+      "版本与方法",
+      "翻译与隐私"
+    ],
+    "/razers/zh-CN/localization/": [
+      "翻译与文档维护",
+      "构建文档站"
+    ],
+    "/razers/zh-CN/product-principles/": [
+      "产品原则",
+      "对用户的承诺",
+      "交互标准",
+      "功能完整性",
+      "当前边界"
+    ],
+    "/razers/zh-CN/provenance/": [
+      "来源记录",
+      "内置中文字体",
+      "openrazer",
+      "busy-行为差异",
+      "openrgb",
+      "irazer",
+      "证据验证与字体"
+    ],
+    "/razers/zh-CN/releases/": [
+      "版本发布与依赖维护",
+      "发布流程",
+      "依赖与文档"
+    ],
+    "/razers/zh-CN/safety/": [
+      "硬件安全政策",
+      "命令风险级别",
+      "原始数据包工具",
+      "诊断与隐私",
+      "当前保证"
+    ],
+    "/razers/zh-CN/troubleshooting/": [
+      "常见问题",
+      "没有发现设备",
+      "控制按钮不可用",
+      "agent-启动失败或协议错误",
+      "语言或字体异常",
+      "系统信任提示和较旧的-linux"
+    ]
+  }
+}
